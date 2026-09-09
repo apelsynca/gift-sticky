@@ -1,0 +1,22 @@
+[project]
+name = "gift-sticky"
+version = "0.1.0"
+description = "Telegram gifts price and price changes sticker pack"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+  "aiogram>=3.31.0",
+  "loguru>=0.7.3",
+  "pillow>=12.3.0",
+  "pydantic>=2.13.5",
+  "pydantic-settings>=2.15.0",
+  "taskipy>=1.14.1",
+]
+
+[tool.taskipy.tasks]
+main = { cmd = "uv run sticky", help = "Main process worker" }
+generate = { cmd = "uv run sticky generate", help = "Generate stickers" }
+
+[tool.ruff]
+line-length = 90
+target-version = "py314"
