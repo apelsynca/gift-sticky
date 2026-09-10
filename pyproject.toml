@@ -6,17 +6,41 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
   "aiogram>=3.31.0",
-  "loguru>=0.7.3",
   "pillow>=12.3.0",
   "pydantic>=2.13.5",
   "pydantic-settings>=2.15.0",
+  "structlog>=26.1.0",
   "taskipy>=1.14.1",
 ]
 
 [tool.taskipy.tasks]
-main = { cmd = "uv run sticky", help = "Main process worker" }
-generate = { cmd = "uv run sticky generate", help = "Generate stickers" }
+main = { cmd = "uv run -m sticky", help = "Main process worker" }
+generate = { cmd = "uv run -m sticky --generate", help = "Generate stickers" }
 
 [tool.ruff]
 line-length = 90
 target-version = "py314"
+
+[tool.ruff.lint]
+extend-select = [
+  "I",
+  "UP",
+  "T20",
+  "B039",
+  "PT",
+  "RUF022",
+  "RUF023",
+  "RUF10",  # RUF10x
+  "RUF20",  # RUF20x
+  "ARG",
+]
+ignore = ["F841", 'B008']
+
+[tool.ruff.lint.per-file-ignores]
+"migrations/*" = [
+  "F401", # remove unusud import
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
