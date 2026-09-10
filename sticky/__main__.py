@@ -2,6 +2,7 @@ import argparse
 
 import structlog
 
+from sticky.image_generator import generator as image_generator
 from sticky.logging import Logger
 
 parser = argparse.ArgumentParser(
@@ -24,6 +25,7 @@ def main() -> None:
 
     if args.generate:
         log.debug("Generate")
+        image_generator.run()
     else:
         log.debug("Non generate")
 

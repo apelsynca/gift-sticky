@@ -6,12 +6,17 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
   "aiogram>=3.31.0",
+  "aiohttp>=3.14.3",
+  "gchanges",
   "pillow>=12.3.0",
   "pydantic>=2.13.5",
   "pydantic-settings>=2.15.0",
   "structlog>=26.1.0",
   "taskipy>=1.14.1",
 ]
+
+[dependency-groups]
+dev = ["pytest>=9.1.1", "pytest-asyncio>=1.4.0", "pytest-mock>=3.15.1"]
 
 [tool.taskipy.tasks]
 main = { cmd = "uv run -m sticky", help = "Main process worker" }
@@ -41,6 +46,10 @@ ignore = ["F841", 'B008']
   "F401", # remove unusud import
 ]
 
+
+[tool.uv.sources]
+gchanges = { path = "../gift-changes-python", editable = true }
+
 [tool.pyright]
-venvPath = "."
-venv = ".venv"
+venvPath = ".venv"
+venv = "."
