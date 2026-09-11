@@ -1,75 +1,26 @@
-import asyncio
 import io
-from enum import StrEnum
-from typing import Literal, NamedTuple
+from typing import Literal
 
 import aiohttp
 import cairosvg
 import structlog
-from gchanges import GiftChanges
 from PIL import Image, ImageDraw
-from pydantic import BaseModel
 
 from sticky.kit.utils import utc_now
 from sticky.logging import Logger
+from sticky.sticker_generator.types import FontPaths, GiftImageSettings, StickerPayload
+from sticky.sticker_generator.utils import make_linear_gradient
 
 log: Logger = structlog.get_logger()
 
 
-class FontPaths(StrEnum):
-    sans_semibold = "assets/fonts/OpenSans-SemiBold.ttf"
-    sans_extrabold = "assets/fonts/OpenSans-ExtraBold.ttf"
+class StickerGenerator:
+    """
+    Class for generating a sticker
 
+    generate - Generates sticker by payload
+    """
 
-class GiftImageSettings(NamedTuple):
-    size: int
-
-    @property
-    def box_size(self) -> tuple[int, int]:
-        return self.size, self.size
-
-
-class StickerTypes(StrEnum):
-    neutral = "neutral"
-    positive = "positive"
-    negative = "negative"
-
-    @property
-    def template_path(self) -> str:
-        filename = {
-            StickerTypes.neutral: "template_neutral.png",
-            StickerTypes.positive: "template_positive.png",
-            StickerTypes.negative: "template_negative.png",
-        }[self]
-        return f"assets/{filename}"
-
-    @property
-    def fill_color(self) -> str:
-        return {
-            StickerTypes.neutral: "#BFBFBF",
-            StickerTypes.positive: "#78FF2A",
-            StickerTypes.negative: "#FF4545",
-        }[self]
-
-
-class StickerPayload(BaseModel):
-    percent: float = 0
-    gift_id: str
-    price: float
-    usd_price: float
-    stars_price: int
-
-    @property
-    def sticker_type(self) -> StickerTypes:
-        if self.percent == 0:
-            return StickerTypes.neutral
-        return StickerTypes.positive if self.percent > 0 else StickerTypes.negative
-
-    def get_percent_sign(self) -> str:
-        return "+" if self.percent > 0 else "-" if self.percent < 0 else ""
-
-
-class ImageGenerator:
     GRAM_SVG_SIZE = 69
     GRAY_COLOR = "#c5c5c5"
     STAR_WIDTH = 32
@@ -77,36 +28,15 @@ class ImageGenerator:
     def __init__(
         self, *, sticker_download_size: Literal[1024, 512, 256, 128] = 512
     ) -> None:
-        self.changes = GiftChanges()
         self.gim_settings = GiftImageSettings(size=sticker_download_size)
 
-    def run(self) -> None:
-        """Starts async loop or smth"""
-        asyncio.run(self.start())
+    async def generate(self, payload: StickerPayload) -> None:
+        """Method to generate a sticker from payload and save"""
 
-    async def start(self) -> None:
-        names = await self.changes.get_names()
-
-        for _, id in list(names.items())[:1]:
-            payload = StickerPayload(
-                gift_id=id,
-                price=12.2,
-                usd_price=12.3,
-                stars_price=515,
-                percent=1.25,
-            )
-            await self.generate_for_gift(payload=payload)
-
-            payload.percent = -2.215
-            await self.generate_for_gift(payload=payload)
-
-            payload.percent = 0
-            await self.generate_for_gift(payload=payload)
-
-    async def generate_for_gift(self, payload: StickerPayload) -> None:
         log.debug("Generating sticker for gift", id=payload.gift_id)
 
         result_image = Image.open(payload.sticker_type.template_path)
+
         await self._put_gift_image_on_sticker(
             gift_id=payload.gift_id, canvas_image=result_image
         )
@@ -154,17 +84,36 @@ class ImageGenerator:
         draw = ImageDraw.Draw(text_overlay)
         font = ImageDraw.ImageFont.truetype(FontPaths.sans_extrabold, size=64)
 
-        text_width = _get_text_width_from_bbox(font.getbbox(text=text))
+        t_left, t_top, t_right, t_bottom = font.getbbox(text=text)
+        text_width = _get_text_width_from_bbox((t_left, t_top, t_right, t_bottom))
 
-        left_pos = int(
+        left_pos = round(
             256 - text_width / 2 - self.GRAM_SVG_SIZE / 2 - 4
         )  # 4px is half of 8px gap
         text_left_pos = left_pos + self.GRAM_SVG_SIZE + 8
 
-        draw.text((text_left_pos, 294), text=text, font=font, fill="#fff", align="center")
+        text_bbox = (round(t_right - t_left), round(t_bottom - t_top + 3))
+        text_mask_overlay = Image.new("RGBA", size=text_bbox)
+
+        # the white text
+        before_draw = ImageDraw.Draw(text_mask_overlay)
+        before_draw.text(
+            (0, round(t_bottom - t_top) / -2 + 3),
+            text=text,
+            font=font,
+            fill="#ffffff",
+            align="center",
+        )
+
+        gradient_overlay = make_linear_gradient(
+            size=text_bbox, from_color="#ffffff", to_color="#626262", direction="vertical"
+        )
+
+        # crop gradient bg using text as mask (which makes me a gradient filled text)
+        text_overlay.paste(gradient_overlay, (text_left_pos, 314 - 2), text_mask_overlay)
 
         gram_png_bytes = cairosvg.svg2png(url="assets/gram.svg")
-        assert gram_png_bytes
+        assert gram_png_bytes is not None
 
         gram_svg_image = Image.open(io.BytesIO(gram_png_bytes))
         gram_svg_image = gram_svg_image.resize([self.GRAM_SVG_SIZE, self.GRAM_SVG_SIZE])
@@ -174,12 +123,15 @@ class ImageGenerator:
 
     def _get_secondary_price_text_overlay(self, payload: StickerPayload) -> Image.Image:
         """
+        Put secondary price text overlay
+
         X - dollar + usd text width
         32 - star width
         10 - gap between star text and star icon
         Y - stars text width
         24 - gap between two
         """
+
         text_overlay = self._get_text_overlay()
         usd_text = f"$ {round(payload.usd_price, 2)}"
 
@@ -194,7 +146,7 @@ class ImageGenerator:
         )
         content_width = usd_text_width + 24 + star_content_width
 
-        leftmost_pos = int(256 - content_width / 2)
+        leftmost_pos = round(256 - content_width / 2)
 
         draw.text(
             (leftmost_pos, 381),
@@ -212,7 +164,7 @@ class ImageGenerator:
 
         star_content_left_pos = leftmost_pos + usd_text_width + 24
         text_overlay.paste(
-            star_svg_image, (int(star_content_left_pos), 390), star_svg_image
+            star_svg_image, (round(star_content_left_pos), 390), star_svg_image
         )
 
         draw.text(
@@ -260,7 +212,7 @@ class ImageGenerator:
             text=text,
             font=font,
             align="center",
-            fill=payload.sticker_type.fill_color,
+            fill=payload.sticker_type.percent_fill,
         )
 
         text_frame = text_frame.rotate(-45, expand=True)
@@ -274,6 +226,3 @@ class ImageGenerator:
 
 def _get_text_width_from_bbox(bbox: tuple[float, float, float, float]) -> float:
     return bbox[2] - bbox[0]
-
-
-generator = ImageGenerator()
