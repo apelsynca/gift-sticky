@@ -30,7 +30,7 @@ class StickerGenerator:
     ) -> None:
         self.gim_settings = GiftImageSettings(size=sticker_download_size)
 
-    async def generate(self, payload: StickerPayload) -> None:
+    async def generate_to_file(self, payload: StickerPayload, path: str) -> None:
         """Method to generate a sticker from payload and save"""
 
         log.debug("Generating sticker for gift", id=payload.gift_id)
@@ -57,7 +57,7 @@ class StickerGenerator:
             result_image, self._get_percent_text_overlay(payload=payload)
         )
 
-        result_image.show()
+        result_image.save(path)
 
     async def _put_gift_image_on_sticker(
         self, gift_id, canvas_image: Image.Image
