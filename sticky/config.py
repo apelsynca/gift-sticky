@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     ENV: Environment = Environment.development
     LOG_LEVEL: str = "DEBUG"
 
+    STICKER_PACK_NAME: str = "synca"  # name of the sticker pack
+    STICKER_PACK_TITLE: str = "Sticky Gifts"
+    STICKER_PACK_OWNER_ID: int = 0  # user id of the sticker pack owner
+
     # Telegram bot
     BOT_TOKEN: str = ""
     BOT_WEBHOOK_URL: str = ""
