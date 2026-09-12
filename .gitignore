@@ -10,3 +10,6 @@ wheels/
 .venv
 
 generations/*.png
+
+.env
+.env.local

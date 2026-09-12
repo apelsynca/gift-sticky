@@ -38,9 +38,9 @@ class Settings(BaseSettings):
     BOT_WEBHOOK_SECRET_TOKEN: str | None = None
 
     # Database
-    POSTGRES_USER: str = "stars"
-    POSTGRES_PWD: str = "stars"
-    POSTGRES_DATABASE: str = "stars_dev"
+    POSTGRES_USER: str = "sticky"
+    POSTGRES_PWD: str = "sticky"
+    POSTGRES_DATABASE: str = "sticky_dev"
     POSTGRES_HOST: str = "127.0.0.1"
     POSTGRES_PORT: int = 5432
     DATABASE_POOL_SIZE: int = 5
