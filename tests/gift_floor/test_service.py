@@ -11,6 +11,22 @@ from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_gift
 
 
+async def create_gift_floor(
+    save_fixture: SaveFixture,
+    *,
+    floor: float,
+    gift: Gift,
+    deduct_creation: timedelta | None = None,
+) -> GiftFloor:
+    created_at = utc_now()
+    if deduct_creation is not None:
+        created_at -= deduct_creation
+
+    gift_floor = GiftFloor(floor=floor, gift=gift, created_at=created_at)
+    await save_fixture(gift_floor)
+    return gift_floor
+
+
 @pytest.mark.asyncio
 async def test_get_floor_changes_zero_change_if_no_records(
     session: AsyncSession, gift: Gift
@@ -25,9 +41,9 @@ async def test_get_floor_changes_zero_change_if_different_gift(
     session: AsyncSession, save_fixture: SaveFixture, gift: Gift
 ) -> None:
     gift_second = await create_gift(save_fixture)
-    await save_fixture(GiftFloor(floor=1, gift=gift_second))
-    await save_fixture(
-        GiftFloor(floor=2, gift=gift_second, created_at=utc_now() - timedelta(days=1))
+    await create_gift_floor(save_fixture, floor=1, gift=gift_second)
+    await create_gift_floor(
+        save_fixture, floor=2, gift=gift_second, deduct_creation=timedelta(days=1)
     )
 
     floor_change = await gift_floor_service.get_floor_change(session, gift=gift)
@@ -40,9 +56,9 @@ async def test_get_floor_changes_zero_change_if_different_gift(
 async def test_get_floor_changes_zero_change_if_no_records_till_yesterday(
     session: AsyncSession, save_fixture: SaveFixture, gift: Gift
 ) -> None:
-    await save_fixture(GiftFloor(floor=1.105, gift=gift))
-    await save_fixture(
-        GiftFloor(floor=1.2, gift=gift, created_at=utc_now() - timedelta(hours=2))
+    await create_gift_floor(save_fixture, floor=1.105, gift=gift)
+    await create_gift_floor(
+        save_fixture, floor=1.2, gift=gift, deduct_creation=timedelta(hours=2)
     )
 
     floor_change = await gift_floor_service.get_floor_change(session, gift=gift)
@@ -55,17 +71,15 @@ async def test_get_floor_changes_zero_change_if_no_records_till_yesterday(
 async def test_get_floor_changes_right_change_amount(
     session: AsyncSession, save_fixture: SaveFixture, gift: Gift
 ) -> None:
-    await save_fixture(GiftFloor(floor=1, gift=gift))
-    await save_fixture(
-        GiftFloor(floor=1.22, gift=gift, created_at=utc_now() - timedelta(hours=1))
+    await create_gift_floor(save_fixture, floor=1, gift=gift)
+    await create_gift_floor(
+        save_fixture, floor=1.22, gift=gift, deduct_creation=timedelta(hours=1)
     )
-    await save_fixture(
-        GiftFloor(
-            floor=2.55, gift=gift, created_at=utc_now() - timedelta(days=1, hours=2)
-        )
+    await create_gift_floor(
+        save_fixture, floor=2.55, gift=gift, deduct_creation=timedelta(days=1, hours=2)
     )
-    await save_fixture(
-        GiftFloor(floor=2, gift=gift, created_at=utc_now() - timedelta(days=1))
+    await create_gift_floor(
+        save_fixture, floor=2, gift=gift, deduct_creation=timedelta(days=1)
     )
 
     floor_change = await gift_floor_service.get_floor_change(session, gift=gift)
