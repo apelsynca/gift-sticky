@@ -1,14 +1,18 @@
 from datetime import timedelta
 
+import structlog
 from sqlalchemy import desc, func
 
 from sticky.exceptions import ResourceNotFound
 from sticky.gift.service import gift as gift_service
 from sticky.gift_floor.repository import GiftFloorRepository
 from sticky.kit.utils import utc_now
+from sticky.logging import Logger
 from sticky.models import Gift, GiftFloor
 from sticky.postgres import AsyncSession
 from sticky.thermos_proxy.client import ThermosProxy
+
+log: Logger = structlog.get_logger()
 
 
 class GiftFloorService:
@@ -73,7 +77,14 @@ class GiftFloorService:
                     session, name=collection.name, telegram_id=collection.id
                 )
 
-            await repository.create(GiftFloor(floor=collection.stats.floor, gift=gift))
+            gift_floor = await repository.create(
+                GiftFloor(floor=collection.stats.floor, gift=gift)
+            )
+            log.debug(
+                "Created new gift floor entry",
+                floor=gift_floor.floor,
+                gift_name=gift.name,
+            )
 
 
 gift_floor = GiftFloorService()

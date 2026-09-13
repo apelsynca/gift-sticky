@@ -1,3 +1,5 @@
+import asyncio
+
 import structlog
 from aiogram import Bot
 from aiogram.exceptions import TelegramNotFound
@@ -105,6 +107,7 @@ async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> No
         await update_sticker_in_sticker_pack_telegram(
             session, bot=bot, gift=gift, telegram_sticker=telegram_sticker
         )
+        await asyncio.sleep(0.5)
 
 
 async def update_sticker_in_sticker_pack_telegram(

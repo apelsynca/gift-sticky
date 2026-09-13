@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 import structlog
 
@@ -31,7 +32,7 @@ async def sticky_job_runner() -> None:
     async with async_sessionmaker() as session:
         await ensure_sticker_pack_is_created(session, bot)
         await gift_floor_service.update_from_thermos(session, thermos_proxy)
-        await render_stickers(session)
+        await render_stickers(session, skip_existing=True)
         await update_sticker_pack_in_telegram(session, bot)
 
 
@@ -43,10 +44,20 @@ async def render_stickers_once() -> None:
         await render_stickers(session)
 
 
-async def render_stickers(session: AsyncSession) -> None:
+async def render_stickers(session: AsyncSession, *, skip_existing: bool = False) -> None:
     gifts = await gift_service.get_all(session)
 
     for gift in gifts:
+        if (
+            os.path.exists(sticker_renderer.get_render_path(gift.telegram_id))
+            and skip_existing
+        ):
+            log.debug(
+                "Skipping sticker render, since already exists",
+                skip_existing=skip_existing,
+            )
+            continue
+
         payload = await get_payload_for_gift_collection(session, gift=gift)
         await sticker_renderer.render_and_save_to_file(
             payload=payload, path=sticker_renderer.get_render_path(gift.telegram_id)
