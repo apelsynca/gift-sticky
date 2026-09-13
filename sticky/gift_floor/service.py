@@ -16,6 +16,20 @@ class GiftFloorService:
         repository = GiftFloorRepository.from_session(session)
         return await repository.create(GiftFloor(floor=floor, gift=gift))
 
+    async def get_latest(self, session: AsyncSession, gift: Gift) -> GiftFloor:
+        repository = GiftFloorRepository.from_session(session)
+
+        gift_floor = await repository.get_one_or_none(
+            stmt=repository.get_base_stmt()
+            .where(GiftFloor.gift == gift)
+            .order_by(desc(GiftFloor.created_at))
+        )
+
+        if gift_floor is None:
+            raise ResourceNotFound("Gift floors not found")
+
+        return gift_floor
+
     async def get_floor_change(self, session: AsyncSession, gift: Gift) -> float:
         repository = GiftFloorRepository.from_session(session)
 

@@ -61,7 +61,7 @@ async def ensure_sticker_pack_is_created(session: AsyncSession, bot: Bot) -> Non
             log.info("Created a new sticker pack", link=sticker_pack.link)
 
 
-async def update_sticker_pack_in_telegram(bot: Bot) -> None:
+async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> None:
     """
     Publishes stickers to telegram,
     via getting all sticker records and editing to the fresh ones
