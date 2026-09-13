@@ -44,6 +44,15 @@ class StickerTypes(StrEnum):
         return f"assets/{filename}"
 
     @property
+    def gram_icon_path(self) -> str:
+        filename = {
+            StickerTypes.neutral: "gram_neutral.svg",
+            StickerTypes.positive: "gram_positive.svg",
+            StickerTypes.negative: "gram_negative.svg",
+        }[self]
+        return f"assets/{filename}"
+
+    @property
     def percent_fill(self) -> str:
         """
         Returns a fill color for percent text

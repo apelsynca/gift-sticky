@@ -13,6 +13,8 @@ from sticky.sticker_renderer.utils import make_linear_gradient
 
 log: Logger = structlog.get_logger()
 
+GENERATIONS_PATH = "generations"
+
 
 class StickerRenderer:
     """
@@ -115,7 +117,7 @@ class StickerRenderer:
         # crop gradient bg using text as mask (which makes me a gradient filled text)
         text_overlay.paste(gradient_overlay, (text_left_pos, 314 - 2), text_mask_overlay)
 
-        gram_png_bytes = cairosvg.svg2png(url="assets/gram.svg")
+        gram_png_bytes = cairosvg.svg2png(url=payload.sticker_type.gram_icon_path)
         assert gram_png_bytes is not None
 
         gram_svg_image = Image.open(io.BytesIO(gram_png_bytes))
@@ -225,6 +227,9 @@ class StickerRenderer:
 
     def _get_text_overlay(self) -> Image.Image:
         return Image.new("RGBA", (512, 512), (255, 255, 255, 0))
+
+    def get_render_path(self, telegram_id: str) -> str:
+        return f"{GENERATIONS_PATH}/{telegram_id}.png"
 
 
 def _get_text_width_from_bbox(bbox: tuple[float, float, float, float]) -> float:

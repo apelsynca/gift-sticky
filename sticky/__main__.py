@@ -4,7 +4,7 @@ import asyncio
 import structlog
 
 from sticky.logging import Logger
-from sticky.runner import generate_stickers, sticky_job_runner
+from sticky.runner import render_stickers_once, sticky_job_runner
 
 parser = argparse.ArgumentParser(
     description="Sticky - telegram gift's prices/price-changes sticker pack"
@@ -25,7 +25,7 @@ async def run() -> None:
     args = parser.parse_args()
 
     if args.generate:
-        await generate_stickers()
+        await render_stickers_once()
     else:
         await sticky_job_runner()
 
