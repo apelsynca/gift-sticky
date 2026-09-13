@@ -7,3 +7,7 @@ class StickerPack(Model):
     __tablename__ = "sticker_pack"
 
     name: Mapped[str] = mapped_column(primary_key=True)
+
+    @property
+    def link(self) -> str:
+        return f"https://t.me/addstickers/{self.name}"

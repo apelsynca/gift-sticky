@@ -2,10 +2,13 @@ from datetime import timedelta
 
 from sqlalchemy import desc, func
 
+from sticky.exceptions import ResourceNotFound
+from sticky.gift.service import gift as gift_service
 from sticky.gift_floor.repository import GiftFloorRepository
 from sticky.kit.utils import utc_now
 from sticky.models import Gift, GiftFloor
 from sticky.postgres import AsyncSession
+from sticky.thermos_proxy.client import ThermosProxy
 
 
 class GiftFloorService:
@@ -39,6 +42,24 @@ class GiftFloorService:
             return 0
 
         return (last_floor.floor - yesterday_floor.floor) / yesterday_floor.floor
+
+    async def update_from_thermos(
+        self, session: AsyncSession, thermos_proxy: ThermosProxy
+    ) -> None:
+        collections = await thermos_proxy.get_collections()
+        repository = GiftFloorRepository.from_session(session)
+
+        for collection in collections:
+            try:
+                gift = await gift_service.get_by_telegram_id(
+                    session, telegram_id=collection.id
+                )
+            except ResourceNotFound:
+                gift = await gift_service.create(
+                    session, name=collection.name, telegram_id=collection.id
+                )
+
+            await repository.create(GiftFloor(floor=collection.stats.floor, gift=gift))
 
 
 gift_floor = GiftFloorService()

@@ -46,15 +46,36 @@ class StickerTypes(StrEnum):
     @property
     def percent_fill(self) -> str:
         """
-        Get a fill color for percent text
+        Returns a fill color for percent text
 
-        (green if positive, red if negative, gray if nothing)
+        (green if positive, red if negative, gray if neutral)
         """
 
         return {
-            StickerTypes.neutral: "#BFBFBF",
-            StickerTypes.positive: "#78FF2A",
-            StickerTypes.negative: "#FF4545",
+            StickerTypes.neutral: "#bfbfbf",
+            StickerTypes.positive: "#78ff2a",
+            StickerTypes.negative: "#ff4545",
+        }[self]
+
+    @property
+    def price_fill_from(self):
+        return self.get_price_fill()[0]
+
+    @property
+    def price_fill_to(self):
+        return self.get_price_fill()[1]
+
+    def get_price_fill(self) -> tuple[str, str]:
+        """
+        Returns a fill color for main price text
+
+        (green if positive, red if negative, other if neutral)
+        """
+
+        return {
+            StickerTypes.neutral: ("#ffffff", "#b4e4ff"),
+            StickerTypes.positive: ("#37ff62", "#92ffa9"),
+            StickerTypes.negative: ("#ff3737", "#f87e7e"),
         }[self]
 
 

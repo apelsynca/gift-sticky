@@ -8,13 +8,13 @@ from PIL import Image, ImageDraw
 
 from sticky.kit.utils import utc_now
 from sticky.logging import Logger
-from sticky.sticker_generator.types import FontPaths, GiftImageSettings, StickerPayload
-from sticky.sticker_generator.utils import make_linear_gradient
+from sticky.sticker_renderer.types import FontPaths, GiftImageSettings, StickerPayload
+from sticky.sticker_renderer.utils import make_linear_gradient
 
 log: Logger = structlog.get_logger()
 
 
-class StickerGenerator:
+class StickerRenderer:
     """
     Class for generating a sticker
 
@@ -30,7 +30,7 @@ class StickerGenerator:
     ) -> None:
         self.gim_settings = GiftImageSettings(size=sticker_download_size)
 
-    async def generate_to_file(self, payload: StickerPayload, path: str) -> None:
+    async def render_and_save_to_file(self, payload: StickerPayload, path: str) -> None:
         """Method to generate a sticker from payload and save"""
 
         log.debug("Generating sticker for gift", id=payload.gift_id)
@@ -69,8 +69,8 @@ class StickerGenerator:
             response.raise_for_status()
             image_bytes = await response.read()
 
-            gift_image = Image.open(io.BytesIO(image_bytes))
-            gift_image = gift_image.resize(size=(228, 228))
+        gift_image = Image.open(io.BytesIO(image_bytes))
+        gift_image = gift_image.resize(size=(228, 228))
 
         canvas_image.paste(
             im=gift_image, box=(142, 66), mask=gift_image
@@ -106,7 +106,10 @@ class StickerGenerator:
         )
 
         gradient_overlay = make_linear_gradient(
-            size=text_bbox, from_color="#ffffff", to_color="#626262", direction="vertical"
+            size=text_bbox,
+            from_color=payload.sticker_type.price_fill_from,
+            to_color=payload.sticker_type.price_fill_to,
+            direction="vertical",
         )
 
         # crop gradient bg using text as mask (which makes me a gradient filled text)

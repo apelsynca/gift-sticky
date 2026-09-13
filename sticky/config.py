@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     ENV: Environment = Environment.development
     LOG_LEVEL: str = "DEBUG"
 
-    STICKER_PACK_NAME: str = "synca"  # name of the sticker pack
+    STICKER_PACK_NAME: str = "synca_by_examplebot"  # mast end with `_by_<bot_username>`
     STICKER_PACK_TITLE: str = "Sticky Gifts"
     STICKER_PACK_OWNER_ID: int = 0  # user id of the sticker pack owner
 

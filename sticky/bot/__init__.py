@@ -2,7 +2,6 @@ from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from sticky.bot.handlers import dispatcher
 from sticky.config import settings
 
 
@@ -17,4 +16,4 @@ def create_bot() -> Bot:
     )
 
 
-__all__ = ["create_bot", "dispatcher"]
+__all__ = ["create_bot"]
