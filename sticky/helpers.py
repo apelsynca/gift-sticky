@@ -3,48 +3,23 @@ import os
 
 import structlog
 
-from sticky.bot import create_bot
 from sticky.gift.service import gift as gift_service
 from sticky.gift_floor.service import gift_floor as gift_floor_service
-from sticky.kit.database.postgres import create_async_sessionmaker
 from sticky.logging import Logger
 from sticky.models import Gift
-from sticky.postgres import AsyncSession, create_async_engine
-from sticky.sticker_pack import (
-    ensure_sticker_pack_is_created,
-    update_sticker_pack_in_telegram,
-)
+from sticky.postgres import AsyncSession
 from sticky.sticker_renderer import renderer as sticker_renderer
 from sticky.sticker_renderer.types import StickerPayload
-from sticky.thermos_proxy.client import ThermosProxy
 
 log: Logger = structlog.get_logger()
 
 
-async def sticky_job_runner() -> None:
-    bot = create_bot()
-
-    async_engine = create_async_engine("app")
-    async_sessionmaker = create_async_sessionmaker(async_engine)
-
-    thermos_proxy = ThermosProxy()
-
-    async with async_sessionmaker() as session:
-        await ensure_sticker_pack_is_created(session, bot)
-        await gift_floor_service.update_from_thermos(session, thermos_proxy)
-        await render_stickers(session, skip_existing=True)
-        await update_sticker_pack_in_telegram(session, bot)
-
-
-async def render_stickers_once() -> None:
-    async_engine = create_async_engine("app")
-    async_sessionmaker = create_async_sessionmaker(async_engine)
-
-    async with async_sessionmaker() as session:
-        await render_stickers(session)
-
-
 async def render_stickers(session: AsyncSession, *, skip_existing: bool = False) -> None:
+    """
+    Iterates over all gifts that exist in db,
+    gets a payload for that and renders them
+    """
+
     gifts = await gift_service.get_all(session)
 
     for gift in gifts:
