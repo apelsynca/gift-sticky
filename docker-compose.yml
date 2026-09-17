@@ -1,0 +1,40 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+    command: sh -c "uv run task pre_deploy && uv run -m sticky"
+    volumes:
+      - generations:/app/generations
+    env_file:
+      - .env
+
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      - POSTGRES_DB=${STICKY_POSTGRES_DATABASE}
+      - POSTGRES_USER=${STICKY_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${STICKY_POSTGRES_PWD}
+      - PGPORT=${STICKY_POSTGRES_PORT}
+    ports:
+      - ${STICKY_POSTGRES_PORT}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - dokploy-network
+    env_file:
+      - .env
+
+volumes:
+  db_data:
+  generations:
+
+networks:
+  dokploy-network:
+    external: true

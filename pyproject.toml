@@ -24,17 +24,18 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "freezegun>=1.5.5",
-    "pytest>=9.1.1",
-    "pytest-asyncio>=1.4.0",
-    "pytest-mock>=3.15.1",
-    "pytest-xdist[psutil]>=3.8.0",
-    "ruff>=0.16.7",
+  "freezegun>=1.5.5",
+  "pytest>=9.1.1",
+  "pytest-asyncio>=1.4.0",
+  "pytest-mock>=3.15.1",
+  "pytest-xdist[psutil]>=3.8.0",
+  "ruff>=0.16.7",
 ]
 
 [tool.taskipy.tasks]
 main = { cmd = "uv run -m sticky", help = "Main process worker" }
 generate = { cmd = "uv run -m sticky --generate", help = "Generate stickers" }
+pre_deploy = { cmd = "uv run alembic upgrade head", help = "DB migration" }
 
 [tool.ruff]
 line-length = 90
@@ -59,10 +60,6 @@ ignore = ["F841", 'B008']
 "migrations/*" = [
   "F401", # remove unusud import
 ]
-
-
-[tool.uv.sources]
-gchanges = { path = "../gift-changes-python", editable = true }
 
 [tool.pyright]
 venvPath = ".venv"

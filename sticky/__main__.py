@@ -49,8 +49,10 @@ async def sticky_job_runner() -> None:
     async with async_sessionmaker() as session:
         await ensure_sticker_pack_is_created(session, bot)
         await gift_floor_service.update_from_thermos(session, thermos_proxy)
-        await render_stickers(session, skip_existing=True)
+        await render_stickers(session)
         await update_sticker_pack_in_telegram(session, bot)
+
+    await asyncio.sleep(60 * 60)
 
 
 async def run() -> None:
