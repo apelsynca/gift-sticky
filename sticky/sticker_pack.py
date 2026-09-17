@@ -2,7 +2,7 @@ import asyncio
 
 import structlog
 from aiogram import Bot
-from aiogram.exceptions import TelegramNotFound
+from aiogram.exceptions import TelegramBadRequest, TelegramNotFound
 from aiogram.types import FSInputFile, InputSticker
 from aiogram.types import Sticker as TelegramSticker
 from sqlalchemy import select
@@ -51,7 +51,7 @@ async def ensure_sticker_pack_is_created(session: AsyncSession, bot: Bot) -> Non
     except ResourceNotFound:
         try:
             sticker_set = await bot.get_sticker_set(name=settings.STICKER_PACK_NAME)
-        except TelegramNotFound:
+        except TelegramBadRequest:
             pass
         else:
             log.info(
