@@ -181,6 +181,10 @@ async def get_sticker_and_update_in_telegram(
 async def create_sticker_and_add_to_pack_in_telegram(
     session: AsyncSession, *, bot: Bot, gift: Gift
 ) -> None:
+    # state where sticker exists in telegram, but does not in database
+    # so adding sticker to set will result in error
+    # need to take pre_existing_tg_sticker and do replace
+
     sticker = await sticker_service.create(
         session, gift=gift, file=sticker_renderer.get_render_path(gift.telegram_id)
     )
