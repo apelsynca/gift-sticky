@@ -11,7 +11,7 @@ from sticky.config import settings
 from sticky.exceptions import ResourceNotFound, StickyError
 from sticky.gift.service import gift as gift_service
 from sticky.logging import Logger
-from sticky.models import Gift, StickerPack
+from sticky.models import Gift, Sticker, StickerPack
 from sticky.postgres import AsyncSession
 from sticky.sticker.service import sticker as sticker_service
 from sticky.sticker_renderer import renderer as sticker_renderer
@@ -99,16 +99,26 @@ async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> No
 
     sticker_set = await bot.get_sticker_set(name=settings.STICKER_PACK_NAME)
 
+    tg_stickerpack_size = len(sticker_set.stickers)
     for i, gift in enumerate(gifts):
         telegram_sticker = None
         # i + 1, since need to skip initial sticker
-        if len(sticker_set.stickers) > i + 1:
+        if tg_stickerpack_size > i + 1:
             telegram_sticker = sticker_set.stickers[i + 1]
 
         await update_sticker_in_sticker_pack_telegram(
             session, bot=bot, gift=gift, pre_existing_tg_sticker=telegram_sticker
         )
         await asyncio.sleep(0.5)
+
+    gifts_in_stickerpack_count = len(gifts) + 1
+    if gifts_in_stickerpack_count >= tg_stickerpack_size:
+        return
+
+    for i in range(gifts_in_stickerpack_count, tg_stickerpack_size):
+        telegram_sticker = sticker_set.stickers[i]
+        await telegram_sticker.delete_from_set()
+        await asyncio.sleep(0.3)
 
 
 async def update_sticker_in_sticker_pack_telegram(
@@ -124,46 +134,36 @@ async def update_sticker_in_sticker_pack_telegram(
     """
 
     try:
-        await get_sticker_and_update_in_telegram(
-            session,
-            bot=bot,
-            gift=gift,
-            pre_existing_tg_sticker=pre_existing_tg_sticker,
-        )
+        sticker = await sticker_service.get_by_gift(session, gift=gift)
     except ResourceNotFound:
-        await create_sticker_and_add_to_pack_in_telegram(session, bot=bot, gift=gift)
+        sticker = await sticker_service.create(
+            session, gift=gift, file=sticker_renderer.get_render_path(gift.telegram_id)
+        )
+
+    await add_or_replace_sticker_in_telegram(
+        bot=bot, sticker=sticker, pre_existing_tg_sticker=pre_existing_tg_sticker
+    )
 
 
-async def get_sticker_and_update_in_telegram(
-    session: AsyncSession,
-    *,
-    bot: Bot,
-    gift: Gift,
-    pre_existing_tg_sticker: TelegramSticker | None = None,
+async def add_or_replace_sticker_in_telegram(
+    bot: Bot, sticker: Sticker, pre_existing_tg_sticker: TelegramSticker | None = None
 ) -> None:
-    """
-    param:
-    pre_existing_tg_sticker - can be any sticker, not tied to gift
-    """
-
-    sticker = await sticker_service.get_by_gift(session, gift=gift)
-
     if pre_existing_tg_sticker is None:
-        added = await bot.add_sticker_to_set(
+        is_sticker_added = await bot.add_sticker_to_set(
             user_id=settings.STICKER_PACK_OWNER_ID,
             name=settings.STICKER_PACK_NAME,
             sticker=sticker_service.get_telegram_input_sticker(sticker),
         )
 
         log.info(
-            "Requested to add a sticker to sticker pack, since no `telegram_sticker` provided",
+            "Requested to add a sticker to sticker pack",
             file=sticker.file,
             gift=sticker.gift,
-            success=added,
+            success=is_sticker_added,
         )
 
     else:
-        replaced = await bot.replace_sticker_in_set(
+        is_stiker_replaced = await bot.replace_sticker_in_set(
             user_id=settings.STICKER_PACK_OWNER_ID,
             name=settings.STICKER_PACK_NAME,
             old_sticker=pre_existing_tg_sticker.file_id,
@@ -174,29 +174,5 @@ async def get_sticker_and_update_in_telegram(
             "Requested to replace a sticker to sticker pack",
             file=sticker.file,
             gift=sticker.gift,
-            success=replaced,
+            success=is_stiker_replaced,
         )
-
-
-async def create_sticker_and_add_to_pack_in_telegram(
-    session: AsyncSession, *, bot: Bot, gift: Gift
-) -> None:
-    # state where sticker exists in telegram, but does not in database
-    # so adding sticker to set will result in error
-    # need to take pre_existing_tg_sticker and do replace
-
-    sticker = await sticker_service.create(
-        session, gift=gift, file=sticker_renderer.get_render_path(gift.telegram_id)
-    )
-
-    added = await bot.add_sticker_to_set(
-        user_id=settings.STICKER_PACK_OWNER_ID,
-        name=settings.STICKER_PACK_NAME,
-        sticker=sticker_service.get_telegram_input_sticker(sticker),
-    )
-    log.info(
-        "Requested to add a sticker to sticker pack",
-        file=sticker.file,
-        gift=sticker.gift,
-        success=added,
-    )
