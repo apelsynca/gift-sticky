@@ -28,7 +28,7 @@ class StickerRenderer:
     STAR_WIDTH = 32
 
     def __init__(
-        self, *, sticker_download_size: Literal[1024, 512, 256, 128] = 512
+        self, *, sticker_download_size: Literal[1024, 512, 256, 128] = 256
     ) -> None:
         self.gim_settings = GiftImageSettings(size=sticker_download_size)
 

@@ -1,8 +1,8 @@
-import asyncio
 import os
 
 import structlog
 
+from sticky.exceptions import ResourceNotFound
 from sticky.gift.service import gift as gift_service
 from sticky.gift_floor.service import gift_floor as gift_floor_service
 from sticky.logging import Logger
@@ -33,11 +33,17 @@ async def render_stickers(session: AsyncSession, *, skip_existing: bool = False)
             )
             continue
 
-        payload = await get_payload_for_gift_collection(session, gift=gift)
+        try:
+            payload = await get_payload_for_gift_collection(session, gift=gift)
+        except ResourceNotFound as exc:
+            log.warning(
+                "Skipping rendering gift, since getting payload raised", exc_info=exc
+            )
+            continue
+
         await sticker_renderer.render_and_save_to_file(
             payload=payload, path=sticker_renderer.get_render_path(gift.telegram_id)
         )
-        await asyncio.sleep(1.25)
 
 
 async def get_payload_for_gift_collection(
@@ -50,6 +56,7 @@ async def get_payload_for_gift_collection(
     """
 
     gift_floor = await gift_floor_service.get_latest(session, gift=gift)
+
     floor_price = gift_floor.floor
     usd_price = floor_price * 1.4
     stars_price = round(floor_price * 1.4 / 0.015)

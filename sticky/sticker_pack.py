@@ -89,6 +89,9 @@ async def create_sticker_pack(session: AsyncSession) -> StickerPack:
     return sticker_pack
 
 
+TG_RATE_LIMIT_SLEEP = 0.25
+
+
 async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> None:
     """
     Publishes stickers to telegram,
@@ -109,7 +112,7 @@ async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> No
         await update_sticker_in_sticker_pack_telegram(
             session, bot=bot, gift=gift, pre_existing_tg_sticker=telegram_sticker
         )
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(TG_RATE_LIMIT_SLEEP)
 
     gifts_in_stickerpack_count = len(gifts) + 1
     if gifts_in_stickerpack_count >= tg_stickerpack_size:
@@ -118,7 +121,7 @@ async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> No
     for i in range(gifts_in_stickerpack_count, tg_stickerpack_size):
         telegram_sticker = sticker_set.stickers[i]
         await telegram_sticker.delete_from_set()
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(TG_RATE_LIMIT_SLEEP)
 
 
 async def update_sticker_in_sticker_pack_telegram(

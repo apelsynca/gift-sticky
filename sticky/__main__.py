@@ -27,6 +27,14 @@ parser.add_argument(
     action="store_true",
 )
 
+parser.add_argument(
+    "--telegram",
+    help="Generate the sticker pack and sync it with telegram",
+    default=False,
+    required=False,
+    action="store_true",
+)
+
 log: Logger = structlog.get_logger()
 
 
@@ -60,8 +68,10 @@ async def run() -> None:
 
     if args.generate:
         await render_stickers_once()
-    else:
+    elif args.telegram:
         await sticky_job_runner()
+    else:
+        pass  # litestar endpoint + scheduler once an hour
 
 
 def main() -> None:
