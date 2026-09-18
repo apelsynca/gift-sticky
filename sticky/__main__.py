@@ -27,13 +27,6 @@ parser.add_argument(
     action="store_true",
 )
 
-parser.add_argument(
-    "--telegram",
-    help="Generate the sticker pack and sync it with telegram",
-    default=False,
-    required=False,
-    action="store_true",
-)
 
 log: Logger = structlog.get_logger()
 
@@ -46,7 +39,7 @@ async def render_stickers_once() -> None:
         await render_stickers(session)
 
 
-async def sticky_job_runner() -> None:
+async def sticky_generate_and_post_once() -> None:
     bot = create_bot()
 
     async_engine = create_async_engine("app")
@@ -60,18 +53,14 @@ async def sticky_job_runner() -> None:
         await render_stickers(session)
         await update_sticker_pack_in_telegram(session, bot)
 
-    await asyncio.sleep(60 * 60)
-
 
 async def run() -> None:
     args = parser.parse_args()
 
     if args.generate:
         await render_stickers_once()
-    elif args.telegram:
-        await sticky_job_runner()
     else:
-        pass  # litestar endpoint + scheduler once an hour
+        await sticky_generate_and_post_once()
 
 
 def main() -> None:
