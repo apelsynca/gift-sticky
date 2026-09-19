@@ -5,6 +5,9 @@ import uuid
 from typing import Any
 
 import structlog
+from litestar.logging.config import BaseLoggingConfig, StructLoggingConfig
+from litestar.plugins.structlog import StructlogConfig, StructlogPlugin
+from litestar.types import GetLogger
 
 from sticky.config import settings
 
@@ -45,57 +48,59 @@ class Logging[RendererType]:
         raise NotImplementedError()
 
     @classmethod
-    def configure_stdlib(cls) -> None:
+    def get_stdlib_config(cls) -> dict:
         level = cls.get_level()
 
-        logging.config.dictConfig(
-            {
-                "version": 1,
-                "disable_existing_loggers": True,
-                "formatters": {
-                    "sticky": {
-                        "()": structlog.stdlib.ProcessorFormatter,
-                        "processors": [
-                            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-                            cls.get_renderer(),
-                        ],
-                        "foreign_pre_chain": [
-                            structlog.contextvars.merge_contextvars,
-                            structlog.stdlib.add_log_level,
-                            structlog.stdlib.add_logger_name,
-                            structlog.stdlib.PositionalArgumentsFormatter(),
-                            structlog.stdlib.ExtraAdder(),
-                            cls.timestamper,
-                            structlog.processors.UnicodeDecoder(),
-                            structlog.processors.StackInfoRenderer(),
-                            structlog.processors.format_exc_info,
-                        ],
-                    },
+        return {
+            "version": 1,
+            "disable_existing_loggers": True,
+            "formatters": {
+                "sticky": {
+                    "()": structlog.stdlib.ProcessorFormatter,
+                    "processors": [
+                        structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                        cls.get_renderer(),
+                    ],
+                    "foreign_pre_chain": [
+                        structlog.contextvars.merge_contextvars,
+                        structlog.stdlib.add_log_level,
+                        structlog.stdlib.add_logger_name,
+                        structlog.stdlib.PositionalArgumentsFormatter(),
+                        structlog.stdlib.ExtraAdder(),
+                        cls.timestamper,
+                        structlog.processors.UnicodeDecoder(),
+                        structlog.processors.StackInfoRenderer(),
+                        structlog.processors.format_exc_info,
+                    ],
                 },
-                "handlers": {
-                    "default": {
-                        "level": level,
-                        "class": "logging.StreamHandler",
-                        "formatter": "sticky",
-                    },
+            },
+            "handlers": {
+                "default": {
+                    "level": level,
+                    "class": "logging.StreamHandler",
+                    "formatter": "sticky",
                 },
-                "loggers": {
-                    "": {
-                        "handlers": ["default"],
-                        "level": level,
-                        "propagate": False,
-                    },
-                    # Propagate third-party loggers to the root one
-                    **{
-                        logger: {
-                            "handlers": [],
-                            "propagate": True,
-                        }
-                        for logger in ["sqlalchemy", "uvicorn", "logtide"]
-                    },
+            },
+            "loggers": {
+                "": {
+                    "handlers": ["default"],
+                    "level": level,
+                    "propagate": False,
                 },
-            }
-        )
+                # Propagate third-party loggers to the root one
+                **{
+                    logger: {
+                        "handlers": [],
+                        "propagate": True,
+                    }
+                    for logger in ["sqlalchemy", "uvicorn", "logtide"]
+                },
+            },
+        }
+
+    @classmethod
+    def configure_stdlib(cls) -> None:
+        logging.config.dictConfig(cls.get_stdlib_config())
 
     @classmethod
     def configure_structlog(cls) -> None:
@@ -124,11 +129,34 @@ class Production(Logging[structlog.dev.ConsoleRenderer]):
         return structlog.dev.ConsoleRenderer(colors=True)
 
 
-def configure() -> None:
+def get_renderer_class() -> type[Logging]:
     if settings.is_production():
-        Production.configure()
+        return Production
     else:
-        Development.configure()
+        return Development
+
+
+def configure() -> None:
+    get_renderer_class().configure()
+
+
+class LitestarLoggingConfig(BaseLoggingConfig):
+    def configure(self) -> GetLogger:
+        get_renderer_class().configure_stdlib()
+        return structlog.get_logger
+
+
+plugin_config = StructlogConfig(
+    structlog_logging_config=StructLoggingConfig(
+        processors=get_renderer_class().get_processors(),
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.stdlib.BoundLogger,
+        cache_logger_on_first_use=True,
+        standard_lib_logging_config=LitestarLoggingConfig(),  # pyright: ignore
+    ),
+    enable_middleware_logging=False,  # disable HTTP logs
+)
+plugin = StructlogPlugin(plugin_config)
 
 
 class TraceID:

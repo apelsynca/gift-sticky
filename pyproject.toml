@@ -11,7 +11,7 @@ dependencies = [
   "asyncpg>=0.31.0",
   "cairosvg>=2.9.1",
   "gchanges",
-  "litestar>=2.24.0",
+  "litestar[sqlalchemy]>=2.24.0",
   "pillow>=12.3.0",
   "psycopg2-binary>=2.9.13",
   "pydantic>=2.13.5",
@@ -20,6 +20,7 @@ dependencies = [
   "sqlalchemy-utils>=0.42.1",
   "structlog>=26.1.0",
   "taskipy>=1.14.1",
+  "uvicorn>=0.53.0",
 ]
 
 [dependency-groups]
@@ -34,8 +35,9 @@ dev = [
 
 [tool.taskipy.tasks]
 main = { cmd = "uv run -m sticky", help = "Main process worker" }
+api = { cmd = 'uvicorn sticky.app:app --reload --reload-exclude "tests/*" --workers 1 --host 127.0.0.1 --port 8000', help = "Start API" }
 generate = { cmd = "uv run -m sticky --generate", help = "Generate stickers" }
-pre_deploy = { cmd = "uv run alembic upgrade head", help = "DB migration" }
+pre_deploy = { cmd = "alembic upgrade head", help = "DB migration" }
 
 [tool.ruff]
 line-length = 90

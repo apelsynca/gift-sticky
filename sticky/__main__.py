@@ -8,6 +8,7 @@ from sticky.gift_floor.service import gift_floor as gift_floor_service
 from sticky.helpers import render_stickers
 from sticky.kit.database.postgres import create_async_sessionmaker
 from sticky.logging import Logger
+from sticky.logging import configure as configure_logging
 from sticky.postgres import create_async_engine
 from sticky.sticker_pack import (
     ensure_sticker_pack_is_created,
@@ -64,6 +65,8 @@ async def run() -> None:
 
 
 def main() -> None:
+    configure_logging()
+
     try:
         asyncio.run(run())
     except KeyboardInterrupt:

@@ -1,4 +1,7 @@
+from collections.abc import AsyncGenerator
 from typing import Literal
+
+from litestar.datastructures import State
 
 from sticky.config import settings
 from sticky.kit.database.postgres import AsyncEngine, AsyncSession
@@ -20,4 +23,20 @@ def create_async_engine(
     )
 
 
-__all__ = ["AsyncEngine", "AsyncSession", "create_async_engine"]
+async def db_session_dependency(state: State) -> AsyncGenerator[AsyncSession]:
+    async with state.async_sessionmaker() as session:
+        try:
+            yield session
+        except:
+            await session.rollback()
+            raise
+        else:
+            await session.commit()
+
+
+__all__ = [
+    "AsyncEngine",
+    "AsyncSession",
+    "create_async_engine",
+    "db_session_dependency",
+]

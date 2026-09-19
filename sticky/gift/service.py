@@ -49,7 +49,7 @@ class GiftService:
         gift = await repository.get_by_telegram_id_or_none(telegram_id=telegram_id)
 
         if gift is not None:
-            raise StickyError()
+            raise StickyError("Gift with that telegram_id already exists")
 
         return await repository.create(
             Gift(name=name, telegram_id=telegram_id), flush=True

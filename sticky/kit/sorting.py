@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from sticky.exceptions import StickyRequestValidationError
+from sticky.exceptions import StickyValidationError
 
 type Sorting[PE] = tuple[PE, bool]
 
@@ -23,7 +23,7 @@ class _SortingGetter[PE: StrEnum]:
             try:
                 parsed_sorting.append((self.sort_property_enum(criteria), desc))
             except ValueError:
-                raise StickyRequestValidationError(
+                raise StickyValidationError(
                     [
                         {
                             "loc": ("query", "sorting"),
