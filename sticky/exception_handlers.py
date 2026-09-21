@@ -1,14 +1,10 @@
 import msgspec
-import structlog
 from litestar import Request, Response
 from litestar.exceptions import ValidationException
 from litestar.serialization import default_serializer
 from litestar.types import ExceptionHandlersMap
 
 from sticky.exceptions import StickyError, StickyValidationError
-from sticky.logging import Logger
-
-log: Logger = structlog.get_logger()
 
 
 def sticky_exception_handler(_: Request, exc: StickyError) -> Response:
