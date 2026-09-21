@@ -3,10 +3,12 @@ from contextlib import asynccontextmanager
 
 import structlog
 from litestar import Litestar
+from litestar.config.allowed_hosts import AllowedHostsConfig
 from litestar.openapi.config import OpenAPIConfig
 from litestar.plugins.sqlalchemy import SQLAlchemyPlugin
 from litestar_queues import QueueConfig, QueuePlugin
 
+from sticky.config import settings
 from sticky.exception_handlers import EXCEPTION_HANDLERS
 from sticky.health.endpoints import router as health_router
 from sticky.hello_world.endpoints import router as hello_world_router
@@ -42,6 +44,9 @@ def create_app() -> Litestar:
             sqladmin_plugin,
         ],
         exception_handlers=EXCEPTION_HANDLERS,
+        allowed_hosts=AllowedHostsConfig(
+            allowed_hosts=[f"*.{settings.DOMAIN}"], exclude=["/healthz"]
+        ),
     )
 
 

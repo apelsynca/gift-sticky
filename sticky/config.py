@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     ENV: Environment = Environment.development
     LOG_LEVEL: str = "DEBUG"
+    DOMAIN: str = "example.com"
 
     STICKER_PACK_NAME: str = "synca_by_examplebot"  # mast end with `_by_<bot_username>`
     STICKER_PACK_TITLE: str = "Sticky Gifts"

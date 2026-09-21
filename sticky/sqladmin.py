@@ -1,3 +1,4 @@
+import secrets
 from typing import ClassVar
 
 import structlog
@@ -25,7 +26,7 @@ class AdminAuth(AuthenticationBackend):
 
     async def logout(self, request: Request) -> bool:
         request.session.clear()
-        return False
+        return True
 
     async def authenticate(self, request: Request) -> bool:
         token = request.session.get("token")
@@ -35,7 +36,7 @@ class AdminAuth(AuthenticationBackend):
         username, password = token.split(":")
 
         right_username = username == settings.ADMIN_USERNAME
-        right_password = password == settings.ADMIN_PASSWORD
+        right_password = secrets.compare_digest(password, settings.ADMIN_PASSWORD)
 
         if not right_username or not right_password:
             log.warning(
