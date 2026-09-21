@@ -11,7 +11,7 @@ dependencies = [
   "asyncpg>=0.31.0",
   "cairosvg>=2.9.1",
   "gchanges",
-  "litestar[sqlalchemy]>=2.24.0",
+  "litestar[sqlalchemy,standard]>=2.24.0",
   "pillow>=12.3.0",
   "psycopg2-binary>=2.9.13",
   "pydantic>=2.13.5",
