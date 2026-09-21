@@ -10,4 +10,6 @@ WORKDIR /app
 
 RUN uv sync --locked
 
-CMD ["uv", "run", "uvicorn", "sticky.app:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV LITESTAR_APP="sticky.app:app"
+
+CMD ["uv", "run", "litestar", "run", "--host", "0.0.0.0", "--port", "8000"]

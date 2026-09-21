@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     networks:
       - dokploy-network
-    command: sh -c "uv run task pre_deploy && uv run uvicorn sticky.app:app --host 0.0.0.0 --port 8000"
+    command: sh -c "uv run task pre_deploy && LITESTAR_APP=sticky.app:app uv run litestar run --host 0.0.0.0 --port 8000"
     volumes:
       - generations:/app/generations
     env_file:
