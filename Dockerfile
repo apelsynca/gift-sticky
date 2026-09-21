@@ -10,4 +10,4 @@ WORKDIR /app
 
 RUN uv sync --locked
 
-CMD ["uv", "run", "-m", "sticky"]
+CMD ["uvicorn", "sticky.app:app", "--host", "0.0.0.0", "--port", "8000"]
