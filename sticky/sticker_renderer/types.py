@@ -56,10 +56,8 @@ class StickerTypes(StrEnum):
     def percent_fill(self) -> str:
         """
         Returns a fill color for percent text
-
         (green if positive, red if negative, gray if neutral)
         """
-
         return {
             StickerTypes.neutral: "#bfbfbf",
             StickerTypes.positive: "#78ff2a",
@@ -80,7 +78,6 @@ class StickerTypes(StrEnum):
 
         (green if positive, red if negative, other if neutral)
         """
-
         return {
             StickerTypes.neutral: ("#ffffff", "#b4e4ff"),
             StickerTypes.positive: ("#37ff62", "#92ffa9"),

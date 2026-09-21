@@ -20,7 +20,7 @@ class StickerRenderer:
     """
     Class for generating a sticker
 
-    generate - Generates sticker by payload
+    @generate - Generates sticker by payload
     """
 
     GRAM_SVG_SIZE = 69
@@ -34,7 +34,6 @@ class StickerRenderer:
 
     async def render_and_save_to_file(self, payload: StickerPayload, path: str) -> None:
         """Method to generate a sticker from payload and save"""
-
         log.debug("Generating sticker for gift", id=payload.gift_id)
 
         result_image = Image.open(payload.sticker_type.template_path)
@@ -136,7 +135,6 @@ class StickerRenderer:
         Y - stars text width
         24 - gap between two
         """
-
         text_overlay = self._get_text_overlay()
         usd_text = f"$ {round(payload.usd_price, 2)}"
 

@@ -11,6 +11,7 @@ dependencies = [
   "asyncpg>=0.31.0",
   "cairosvg>=2.9.1",
   "gchanges",
+  "litestar-queues>=0.12.0",
   "litestar[sqlalchemy,standard]>=2.24.0",
   "pillow>=12.3.0",
   "psycopg2-binary>=2.9.13",
@@ -35,7 +36,7 @@ dev = [
 
 [tool.taskipy.tasks]
 main = { cmd = "uv run -m sticky", help = "Main process worker" }
-api = { cmd = 'uvicorn sticky.app:app --reload --reload-exclude "tests/*" --workers 1 --host 127.0.0.1 --port 8000', help = "Start API" }
+api = { cmd = 'LITESTAR_APP=sticky.app:app litestar run --reload --reload-exclude "tests/*" --host 127.0.0.1 --port 8000', help = "Start local API" }
 generate = { cmd = "uv run -m sticky --generate", help = "Generate stickers" }
 pre_deploy = { cmd = "alembic upgrade head", help = "DB migration" }
 

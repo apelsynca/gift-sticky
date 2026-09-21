@@ -19,7 +19,6 @@ async def render_stickers(session: AsyncSession, *, skip_existing: bool = False)
     Iterates over all gifts that exist in db,
     gets a payload for that and renders them
     """
-
     gifts = await gift_service.get_all(session)
 
     for gift in gifts:
