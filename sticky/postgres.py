@@ -10,7 +10,7 @@ from sticky.kit.database.postgres import AsyncEngine, AsyncSession
 from sticky.kit.database.postgres import create_async_engine as _create_async_engine
 from sticky.models import Model
 
-type ProcessName = Literal["app"]
+type ProcessName = Literal["app", "script"]
 
 
 def create_async_engine(

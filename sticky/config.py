@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     STICKER_PACK_TITLE: str = "Sticky Gifts"
     STICKER_PACK_OWNER_ID: int = 0  # user id of the sticker pack owner
 
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = "admin"
+    ADMIN_AUTH_KEY: str = ""
+
     # Telegram bot
     BOT_TOKEN: str = ""
     BOT_WEBHOOK_URL: str = ""

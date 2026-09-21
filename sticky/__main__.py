@@ -33,7 +33,7 @@ log: Logger = structlog.get_logger()
 
 
 async def render_stickers_once() -> None:
-    async_engine = create_async_engine("app")
+    async_engine = create_async_engine("script")
     async_sessionmaker = create_async_sessionmaker(async_engine)
 
     async with async_sessionmaker() as session:

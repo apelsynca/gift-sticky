@@ -13,6 +13,7 @@ from sticky.hello_world.endpoints import router as hello_world_router
 from sticky.logging import Logger
 from sticky.logging import plugin as structlog_plugin
 from sticky.postgres import db_config
+from sticky.sqladmin import sqladmin_plugin
 from sticky.sticker_pack.endpoints import router as sticker_pack_router
 
 log: Logger = structlog.get_logger()
@@ -26,13 +27,20 @@ async def log_start_finish(_: Litestar) -> AsyncGenerator[None]:
 
 
 def create_app() -> Litestar:
-    queue_plugin = QueuePlugin(config=QueueConfig())
+    queue_plugin = QueuePlugin(
+        config=QueueConfig(task_modules=("sticky.tasks",), initialize_schedules=True)
+    )
 
     return Litestar(
         lifespan=[log_start_finish],
         route_handlers=[health_router, hello_world_router, sticker_pack_router],
         openapi_config=OpenAPIConfig(title="Sticky API", version="0.9.9"),
-        plugins=[structlog_plugin, SQLAlchemyPlugin(db_config), queue_plugin],
+        plugins=[
+            structlog_plugin,
+            SQLAlchemyPlugin(db_config),
+            queue_plugin,
+            sqladmin_plugin,
+        ],
         exception_handlers=EXCEPTION_HANDLERS,
     )
 
