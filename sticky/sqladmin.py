@@ -58,13 +58,14 @@ class StickerAdminView(ModelView, model=Sticker):
 class GiftAdminView(ModelView, model=Gift):
     can_create = True
 
-    column_list: ClassVar = [Gift.name, Gift.telegram_id, Gift.sticker]
+    column_list: ClassVar = [Gift.name, Gift.telegram_id]
 
 
 class GiftFloorAdminView(ModelView, model=GiftFloor):
     can_create = False
+    can_edit = False
 
-    column_list: ClassVar = [GiftFloor.floor, GiftFloor.gift_id]
+    column_list: ClassVar = [GiftFloor.floor, GiftFloor.gift_id, GiftFloor.created_at]
 
 
 async_engine = create_async_engine("app")

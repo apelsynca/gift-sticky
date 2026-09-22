@@ -161,7 +161,7 @@ plugin = StructlogPlugin(plugin_config)
 
 class TraceID:
     _trace_id: typing.ClassVar[contextvars.ContextVar[str | None]] = (
-        contextvars.ContextVar("app.trace_id", default=None)
+        contextvars.ContextVar("sticky.trace_id", default=None)
     )
 
     @classmethod
