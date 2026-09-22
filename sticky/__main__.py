@@ -42,17 +42,22 @@ async def render_stickers_once() -> None:
 
 async def sticky_generate_and_post_once() -> None:
     bot = create_bot()
+    thermos_proxy = ThermosProxy()
 
     async_engine = create_async_engine("app")
     async_sessionmaker = create_async_sessionmaker(async_engine)
 
-    thermos_proxy = ThermosProxy()
-
     async with async_sessionmaker() as session:
         await ensure_sticker_pack_is_created(session, bot)
+        await session.commit()
+
         await gift_floor_service.update_from_thermos(session, thermos_proxy)
+        await session.commit()
+
         await render_stickers(session)
+
         await update_sticker_pack_in_telegram(session, bot)
+        # last thing auto-commited
 
 
 async def run() -> None:

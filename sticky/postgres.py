@@ -1,3 +1,5 @@
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from litestar.plugins.sqlalchemy import (
@@ -6,11 +8,15 @@ from litestar.plugins.sqlalchemy import (
 )
 
 from sticky.config import settings
-from sticky.kit.database.postgres import AsyncEngine, AsyncSession
+from sticky.kit.database.postgres import (
+    AsyncEngine,
+    AsyncSession,
+    create_async_sessionmaker,
+)
 from sticky.kit.database.postgres import create_async_engine as _create_async_engine
 from sticky.models import Model
 
-type ProcessName = Literal["app", "script"]
+type ProcessName = Literal["app", "script", "worker"]
 
 
 def create_async_engine(
@@ -34,4 +40,19 @@ db_config = SQLAlchemyAsyncConfig(
 )
 
 
-__all__ = ["AsyncEngine", "AsyncSession", "create_async_engine"]
+@asynccontextmanager
+async def WorkerSessionMaker() -> AsyncGenerator[AsyncSession]:
+    async_engine = create_async_engine("worker")
+    async_sessionmaker = create_async_sessionmaker(async_engine)
+
+    async with async_sessionmaker() as session:
+        try:
+            yield session
+        except:
+            await session.rollback()
+            raise
+        else:
+            await session.commit()
+
+
+__all__ = ["AsyncEngine", "AsyncSession", "WorkerSessionMaker", "create_async_engine"]

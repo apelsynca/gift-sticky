@@ -31,17 +31,13 @@ def create_app() -> Litestar:
     queue_plugin = QueuePlugin(
         config=QueueConfig(task_modules=("sticky.tasks",), initialize_schedules=True)
     )
+    sqlalchemy_plugin = SQLAlchemyPlugin(db_config)
 
     return Litestar(
         lifespan=[log_start_finish],
         route_handlers=[health_router, hello_world_router, sticker_pack_router],
         openapi_config=OpenAPIConfig(title="Sticky API", version="0.9.9"),
-        plugins=[
-            structlog_plugin,
-            SQLAlchemyPlugin(db_config),
-            queue_plugin,
-            sqladmin_plugin,
-        ],
+        plugins=[structlog_plugin, sqlalchemy_plugin, queue_plugin, sqladmin_plugin],
         middleware=[proxy_headers_middleware],
         exception_handlers=EXCEPTION_HANDLERS,
     )

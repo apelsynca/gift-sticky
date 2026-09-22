@@ -13,4 +13,4 @@ async def update(queue_service: NamedDependency[QueueService]) -> dict[str, str]
     return {"task_id": str(result.id), "status": result.status or "pending"}
 
 
-router = Router(path="/sticker-pack", route_handlers=[update])
+router = Router(path="/sticker-pack", route_handlers=[update], include_in_schema=False)
