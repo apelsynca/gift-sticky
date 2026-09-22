@@ -11,7 +11,5 @@ WORKDIR /app
 RUN uv sync --locked
 
 ENV LITESTAR_APP="sticky.app:app"
-ENV UVICORN_FORWARDED_ALLOW_IPS="*"
-ENV UVICORN_PROXY_HEADERS="true"
 
 CMD ["uv", "run", "litestar", "run", "--host", "0.0.0.0", "--port", "8000"]
