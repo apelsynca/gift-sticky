@@ -6,11 +6,15 @@ services:
     depends_on:
       - db
     restart: unless-stopped
-    networks:
-      - dokploy-network
-    command: sh -c "uv run task pre_deploy && LITESTAR_APP=sticky.app:app uv run litestar run --host 0.0.0.0 --port 8000"
+    environment:
+      - UVICORN_FORWARDED_ALLOW_IPS=*
+      - LITESTAR_APP=sticky.app:app
+      - UVICORN_PROXY_HEADERS=true
+    command: sh -c "uv run task pre_deploy && uv run litestar run --host 0.0.0.0 --port 8000"
     volumes:
       - generations:/app/generations
+    networks:
+      - dokploy-network
     env_file:
       - .env
 
