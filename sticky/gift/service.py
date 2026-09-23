@@ -16,13 +16,19 @@ class GiftService:
         self,
         session: AsyncSession,
         sorting: list[Sorting[GiftSortProperty]] | None = None,
+        *,
+        only_positive: bool = True,
     ) -> Sequence[Gift]:
+        """Gets all positive gift floors"""
+
         if sorting is None:
             sorting = [(GiftSortProperty.floor, True)]
 
         repository = GiftRepository.from_session(session)
 
         stmt = repository.get_base_stmt()
+        if only_positive:
+            stmt = stmt.where(GiftFloor.floor > 0)
 
         for property, is_desc in sorting:
             if property == GiftSortProperty.floor:

@@ -83,7 +83,7 @@ class GiftFloorService:
 
             if floor <= 0:
                 log.info(
-                    "Skipping collection since floor is zero or negative",
+                    "Skipped updating gift floor since collection floor is zero or negative",
                     floor=floor,
                     collection=collection.name,
                 )

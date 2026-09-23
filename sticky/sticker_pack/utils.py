@@ -8,6 +8,7 @@ from aiogram.types import Sticker as TelegramSticker
 from sticky.config import settings
 from sticky.exceptions import ResourceNotFound
 from sticky.gift.service import gift as gift_service
+from sticky.gift_floor.service import gift_floor as gift_floor_service
 from sticky.logging import Logger
 from sticky.models import Gift, Sticker
 from sticky.postgres import AsyncSession
@@ -56,16 +57,25 @@ async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> No
     via getting all sticker records and editing to the fresh ones
     """
 
-    gifts = await gift_service.get_all(session)
-
+    gifts = await gift_service.get_all(session, only_positive=True)
     sticker_set = await bot.get_sticker_set(name=settings.STICKER_PACK_NAME)
 
     tg_stickerpack_size = len(sticker_set.stickers)
+
     for i, gift in enumerate(gifts):
         telegram_sticker = None
         # i + 1, since need to skip initial sticker
         if tg_stickerpack_size > i + 1:
             telegram_sticker = sticker_set.stickers[i + 1]
+
+        gift_floor = await gift_floor_service.get_latest(session, gift=gift)
+
+        if gift_floor.floor <= 0:
+            log.warning(
+                "Skipped publishing/updating, since somehow gift floor floor is zero or negative",
+                floor=gift_floor.floor,
+            )
+            continue
 
         await update_sticker_in_sticker_pack_in_telegram(
             session, bot=bot, gift=gift, pre_existing_tg_sticker=telegram_sticker
