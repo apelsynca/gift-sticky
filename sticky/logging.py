@@ -93,7 +93,7 @@ class Logging[RendererType]:
                         "handlers": [],
                         "propagate": True,
                     }
-                    for logger in ["sqlalchemy", "uvicorn", "logtide"]
+                    for logger in ["sqlalchemy", "uvicorn", "logtide", "litestar_queues"]
                 },
             },
         }
@@ -153,7 +153,6 @@ plugin_config = StructlogConfig(
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
         standard_lib_logging_config=LitestarLoggingConfig(),  # pyright: ignore
-        log_exceptions="always",
     ),
     enable_middleware_logging=False,  # disable HTTP logs
 )
