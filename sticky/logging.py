@@ -153,9 +153,11 @@ plugin_config = StructlogConfig(
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
         standard_lib_logging_config=LitestarLoggingConfig(),  # pyright: ignore
+        log_exceptions="always",
     ),
     enable_middleware_logging=False,  # disable HTTP logs
 )
+
 plugin = StructlogPlugin(plugin_config)
 
 
