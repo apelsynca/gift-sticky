@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Literal
 
-from litestar.plugins.sqlalchemy import (
+from advanced_alchemy.extensions.litestar import (
     SQLAlchemyAsyncConfig,
     async_autocommit_before_send_handler,
 )

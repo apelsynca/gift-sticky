@@ -2,9 +2,9 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import structlog
+from advanced_alchemy.extensions.litestar import SQLAlchemyPlugin
 from litestar import Litestar
 from litestar.openapi.config import OpenAPIConfig
-from litestar.plugins.sqlalchemy import SQLAlchemyPlugin
 from litestar_queues import QueueConfig, QueuePlugin
 
 from sticky.exception_handlers import EXCEPTION_HANDLERS
