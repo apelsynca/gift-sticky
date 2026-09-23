@@ -7,8 +7,7 @@ from sticky.exceptions import ResourceNotFound, StickyError
 from sticky.gift.repository import GiftRepository
 from sticky.gift.sorting import GiftSortProperty
 from sticky.kit.sorting import Sorting
-from sticky.models import Gift
-from sticky.models.gift_floor import GiftFloor
+from sticky.models import Gift, GiftFloor
 from sticky.postgres import AsyncSession
 
 

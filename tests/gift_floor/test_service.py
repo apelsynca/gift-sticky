@@ -5,6 +5,7 @@ import pytest
 from freezegun import freeze_time
 from sqlalchemy import select
 
+from sticky.exceptions import ResourceNotFound
 from sticky.gift_floor.service import gift_floor as gift_floor_service
 from sticky.kit.utils import utc_now
 from sticky.models import Gift, GiftFloor
@@ -101,7 +102,9 @@ async def test_create_creates(session: AsyncSession, gift: Gift) -> None:
 
 
 @pytest.mark.asyncio
-async def test_fetch_latest_creates_right(session: AsyncSession, gift: Gift) -> None:
+async def test_update_from_thermos_creates_right(
+    session: AsyncSession, gift: Gift
+) -> None:
     thermos_proxy_mock = MagicMock(spec=ThermosProxy)
     gift_collection = GiftCollection(
         name="Can be any",
@@ -118,3 +121,14 @@ async def test_fetch_latest_creates_right(session: AsyncSession, gift: Gift) -> 
     assert len(floors) == 1
     assert floors[0].gift == gift
     assert floors[0].floor == 1.23
+
+
+@pytest.mark.asyncio
+async def test_get_latest_raises_if_no_related_records(
+    save_fixture: SaveFixture, session: AsyncSession, gift: Gift
+) -> None:
+    gift_secondary = await create_gift(save_fixture)
+    await create_gift_floor(save_fixture, floor=1, gift=gift_secondary)
+
+    with pytest.raises(ResourceNotFound):
+        await gift_floor_service.get_latest(session=session, gift=gift)

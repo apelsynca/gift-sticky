@@ -1,6 +1,6 @@
 [project]
 name = "gift-sticky"
-version = "0.1.0"
+version = "0.9.9"
 description = "Telegram gifts price and price changes sticker pack"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -63,7 +63,7 @@ ignore = ["F841", 'B008']
 
 [tool.ruff.lint.per-file-ignores]
 "migrations/*" = [
-  "F401", # remove unusud import
+  "F401", # remove unused import
 ]
 
 [tool.pyright]

@@ -3,36 +3,17 @@ import asyncio
 import structlog
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramNotFound
-from aiogram.types import FSInputFile, InputSticker
 from aiogram.types import Sticker as TelegramSticker
-from sqlalchemy import select
 
 from sticky.config import settings
-from sticky.exceptions import ResourceNotFound, StickyError
+from sticky.exceptions import ResourceNotFound
 from sticky.gift.service import gift as gift_service
 from sticky.logging import Logger
-from sticky.models import Gift, Sticker, StickerPack
+from sticky.models import Gift, Sticker
 from sticky.postgres import AsyncSession
 from sticky.sticker.service import sticker as sticker_service
+from sticky.sticker_pack.service import sticker_pack as sticker_pack_service
 from sticky.sticker_renderer import renderer as sticker_renderer
-
-
-async def get_sticker_pack(session: AsyncSession) -> StickerPack:
-    sticker_pack = await session.scalar(select(StickerPack))
-
-    if sticker_pack is None:
-        raise ResourceNotFound("Sticker pack is not created yet!")
-
-    return sticker_pack
-
-
-INITIAL_STICKERS = [
-    InputSticker(
-        sticker=FSInputFile("assets/initial_sticker.png"),
-        format="static",
-        emoji_list=["🍊"],
-    )
-]
 
 log: Logger = structlog.get_logger()
 
@@ -41,13 +22,13 @@ async def ensure_sticker_pack_is_created(session: AsyncSession, bot: Bot) -> Non
     """Ensures sticker pack is created on telegram side"""
 
     try:
-        sticker_pack = await get_sticker_pack(session)
+        sticker_pack = await sticker_pack_service.get(session)
 
         if sticker_pack:
             try:
                 sticker_set = await bot.get_sticker_set(name=settings.STICKER_PACK_NAME)
             except TelegramNotFound:
-                await create_sticker_pack_in_telegram(bot)
+                await sticker_pack_service.create_in_telegram(bot)
     except ResourceNotFound:
         try:
             sticker_set = await bot.get_sticker_set(name=settings.STICKER_PACK_NAME)
@@ -60,33 +41,10 @@ async def ensure_sticker_pack_is_created(session: AsyncSession, bot: Bot) -> Non
             )
             return
 
-        created = await create_sticker_pack_in_telegram(bot)
+        created = await sticker_pack_service.create_in_telegram(bot)
         if created:
-            sticker_pack = await create_sticker_pack(session)
+            sticker_pack = await sticker_pack_service.create(session)
             log.info("Created a new sticker pack", link=sticker_pack.link)
-
-
-async def create_sticker_pack_in_telegram(bot: Bot) -> bool:
-    return await bot.create_new_sticker_set(
-        user_id=settings.STICKER_PACK_OWNER_ID,
-        name=settings.STICKER_PACK_NAME,
-        title=settings.STICKER_PACK_TITLE,
-        stickers=INITIAL_STICKERS,
-    )
-
-
-async def create_sticker_pack(session: AsyncSession) -> StickerPack:
-    sticker_pack = await session.scalar(select(StickerPack))
-
-    if sticker_pack is not None:
-        raise StickyError("Sticker pack already exists")
-
-    sticker_pack = StickerPack(name=settings.STICKER_PACK_NAME)
-
-    session.add(sticker_pack)
-    await session.flush()
-
-    return sticker_pack
 
 
 TG_RATE_LIMIT_SLEEP = 0.25
