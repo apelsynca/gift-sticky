@@ -5,7 +5,7 @@ import pytest
 from freezegun import freeze_time
 from sqlalchemy import select
 
-from sticky.exceptions import ResourceNotFound
+from sticky.exceptions import BadRequest, ResourceNotFound
 from sticky.gift_floor.service import gift_floor as gift_floor_service
 from sticky.kit.utils import utc_now
 from sticky.models import Gift, GiftFloor
@@ -36,6 +36,20 @@ async def create_gift_floor(
 async def test_get_floor_changes_zero_change_if_no_records(
     session: AsyncSession, gift: Gift
 ) -> None:
+    floor_change = await gift_floor_service.get_floor_change(session, gift=gift)
+
+    assert floor_change == 0  # 0%
+
+
+@pytest.mark.asyncio
+async def test_get_floor_changes_zero_if_yesterday_zero(
+    save_fixture: SaveFixture, session: AsyncSession, gift: Gift
+) -> None:
+    await create_gift_floor(
+        save_fixture, floor=0, gift=gift, deduct_creation=timedelta(days=1)
+    )
+    await create_gift_floor(save_fixture, floor=3.25, gift=gift)
+
     floor_change = await gift_floor_service.get_floor_change(session, gift=gift)
 
     assert floor_change == 0  # 0%
@@ -99,6 +113,12 @@ async def test_create_creates(session: AsyncSession, gift: Gift) -> None:
 
     assert gift_floor is not None
     assert gift_floor.floor == 2.25
+
+
+@pytest.mark.asyncio
+async def test_create_raises_if_negative_floor(session: AsyncSession, gift: Gift) -> None:
+    with pytest.raises(BadRequest):
+        await gift_floor_service.create(session, floor=-2.25, gift=gift)
 
 
 @pytest.mark.asyncio

@@ -24,6 +24,16 @@ class ResourceNotFound(StickyError):
         super().__init__(message=message, status_code=404)
 
 
+class BadRequest(StickyError):
+    def __init__(
+        self,
+        message: str = "Bad request",
+        status_code: int = 400,
+        headers: dict[str, str] | None = None,
+    ):
+        super().__init__(message, status_code, headers)
+
+
 class ValidationError(TypedDict):
     type: LiteralString
     loc: tuple[int | str, ...]

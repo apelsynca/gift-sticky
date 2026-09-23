@@ -3,7 +3,7 @@ from datetime import timedelta
 import structlog
 from sqlalchemy import desc, func
 
-from sticky.exceptions import ResourceNotFound
+from sticky.exceptions import BadRequest, ResourceNotFound
 from sticky.gift.service import gift as gift_service
 from sticky.gift_floor.repository import GiftFloorRepository
 from sticky.kit.utils import utc_now
@@ -17,8 +17,19 @@ log: Logger = structlog.get_logger()
 
 class GiftFloorService:
     async def create(self, session: AsyncSession, floor: float, gift: Gift) -> GiftFloor:
+        if floor < 0:
+            raise BadRequest("Floor is negative")
+
         repository = GiftFloorRepository.from_session(session)
-        return await repository.create(GiftFloor(floor=floor, gift=gift))
+        gift_floor = await repository.create(GiftFloor(floor=floor, gift=gift))
+
+        log.debug(
+            "Created new gift floor entry",
+            floor=gift_floor.floor,
+            gift_name=gift.name,
+        )
+
+        return gift_floor
 
     async def get_latest(self, session: AsyncSession, gift: Gift) -> GiftFloor:
         repository = GiftFloorRepository.from_session(session)
@@ -56,7 +67,7 @@ class GiftFloorService:
             )
             .order_by(desc(GiftFloor.created_at))
         )
-        if yesterday_floor is None:
+        if yesterday_floor is None or yesterday_floor.floor <= 0:
             return 0
 
         return (last_floor.floor - yesterday_floor.floor) / yesterday_floor.floor
@@ -68,6 +79,16 @@ class GiftFloorService:
         repository = GiftFloorRepository.from_session(session)
 
         for collection in collections:
+            floor = collection.stats.floor
+
+            if floor <= 0:
+                log.info(
+                    "Skipping collection since floor is zero or negative",
+                    floor=floor,
+                    collection=collection.name,
+                )
+                continue
+
             try:
                 gift = await gift_service.get_by_telegram_id(
                     session, telegram_id=collection.id
@@ -77,14 +98,7 @@ class GiftFloorService:
                     session, name=collection.name, telegram_id=collection.id
                 )
 
-            gift_floor = await repository.create(
-                GiftFloor(floor=collection.stats.floor, gift=gift)
-            )
-            log.debug(
-                "Created new gift floor entry",
-                floor=gift_floor.floor,
-                gift_name=gift.name,
-            )
+            await self.create(session=session, floor=floor, gift=gift)
 
 
 gift_floor = GiftFloorService()

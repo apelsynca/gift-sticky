@@ -4,16 +4,12 @@ import asyncio
 import structlog
 
 from sticky.bot import create_bot
-from sticky.gift_floor.service import gift_floor as gift_floor_service
-from sticky.helpers import render_stickers
 from sticky.kit.database.postgres import create_async_sessionmaker
 from sticky.logging import Logger
 from sticky.logging import configure as configure_logging
 from sticky.postgres import create_async_engine
-from sticky.sticker_pack import (
-    ensure_sticker_pack_is_created,
-    update_sticker_pack_in_telegram,
-)
+from sticky.sticker.utils import render_stickers
+from sticky.sticker_pack.tasks import update_sticker_pack
 from sticky.thermos_proxy.client import ThermosProxy
 
 parser = argparse.ArgumentParser(
@@ -48,16 +44,7 @@ async def sticky_generate_and_post_once() -> None:
     async_sessionmaker = create_async_sessionmaker(async_engine)
 
     async with async_sessionmaker() as session:
-        await ensure_sticker_pack_is_created(session, bot)
-        await session.commit()
-
-        await gift_floor_service.update_from_thermos(session, thermos_proxy)
-        await session.commit()
-
-        await render_stickers(session)
-
-        await update_sticker_pack_in_telegram(session, bot)
-        # last thing auto-commited
+        await update_sticker_pack(session=session, bot=bot, thermos_proxy=thermos_proxy)
 
 
 async def run() -> None:

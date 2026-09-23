@@ -2,7 +2,7 @@ import os
 
 import structlog
 
-from sticky.exceptions import ResourceNotFound
+from sticky.exceptions import ResourceNotFound, StickyError
 from sticky.gift.service import gift as gift_service
 from sticky.gift_floor.service import gift_floor as gift_floor_service
 from sticky.logging import Logger
@@ -33,8 +33,14 @@ async def render_stickers(session: AsyncSession, *, skip_existing: bool = False)
             continue
 
         try:
-            payload = await get_payload_for_gift_collection(session, gift=gift)
+            payload = await get_sticker_payload_for_gift_collection(session, gift=gift)
         except ResourceNotFound as exc:
+            log.warning(
+                "Skipping rendering gift, since getting payload raised not found",
+                exc_info=exc,
+            )
+            continue
+        except StickyError as exc:
             log.warning(
                 "Skipping rendering gift, since getting payload raised", exc_info=exc
             )
@@ -45,7 +51,7 @@ async def render_stickers(session: AsyncSession, *, skip_existing: bool = False)
         )
 
 
-async def get_payload_for_gift_collection(
+async def get_sticker_payload_for_gift_collection(
     session: AsyncSession, gift: Gift
 ) -> StickerPayload:
     """
