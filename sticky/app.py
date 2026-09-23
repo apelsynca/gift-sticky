@@ -12,7 +12,7 @@ from sticky.health.endpoints import router as health_router
 from sticky.hello_world.endpoints import router as hello_world_router
 from sticky.logging import Logger
 from sticky.logging import plugin as structlog_plugin
-from sticky.middlewares import proxy_headers_middleware
+from sticky.middlewares import LogTraceIdMiddleware, proxy_headers_middleware
 from sticky.postgres import db_config
 from sticky.sqladmin import sqladmin_plugin
 from sticky.sticker_pack.endpoints import router as sticker_pack_router
@@ -38,7 +38,7 @@ def create_app() -> Litestar:
         route_handlers=[health_router, hello_world_router, sticker_pack_router],
         openapi_config=OpenAPIConfig(title="Sticky API", version="0.9.9"),
         plugins=[structlog_plugin, sqlalchemy_plugin, queue_plugin, sqladmin_plugin],
-        middleware=[proxy_headers_middleware],
+        middleware=[proxy_headers_middleware, LogTraceIdMiddleware],
         exception_handlers=EXCEPTION_HANDLERS,
     )
 
