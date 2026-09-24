@@ -7,6 +7,7 @@ from typing import Any
 import structlog
 from litestar.logging.config import BaseLoggingConfig, StructLoggingConfig
 from litestar.plugins.structlog import StructlogConfig, StructlogPlugin
+from litestar.status_codes import HTTP_404_NOT_FOUND
 from litestar.types import GetLogger
 
 from sticky.config import settings
@@ -152,7 +153,9 @@ plugin_config = StructlogConfig(
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
-        standard_lib_logging_config=LitestarLoggingConfig(),  # pyright: ignore
+        standard_lib_logging_config=LitestarLoggingConfig(),  # pyright: ignore[reportArgumentType]
+        log_exceptions="always",
+        disable_stack_trace={HTTP_404_NOT_FOUND},
     ),
     enable_middleware_logging=False,  # disable HTTP logs
 )

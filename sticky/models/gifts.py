@@ -15,3 +15,5 @@ class Gift(RecordModel):
     telegram_id: Mapped[str] = mapped_column(unique=True)
 
     sticker: Mapped[Sticker | None] = relationship("Sticker", back_populates="gift")
+
+    ignore_as_sticker: Mapped[bool] = mapped_column(default=False)

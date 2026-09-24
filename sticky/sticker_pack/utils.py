@@ -57,7 +57,7 @@ async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> No
     via getting all sticker records and editing to the fresh ones
     """
 
-    gifts = await gift_service.get_all(session, only_positive=True)
+    gifts = await gift_service.get_all(session, only_positive_floor=True)
     sticker_set = await bot.get_sticker_set(name=settings.STICKER_PACK_NAME)
 
     tg_stickerpack_size = len(sticker_set.stickers)
