@@ -58,7 +58,7 @@ class StickerAdminView(ModelView, model=Sticker):
 class GiftAdminView(ModelView, model=Gift):
     can_create = True
 
-    column_list: ClassVar = [Gift.name, Gift.telegram_id]
+    column_list: ClassVar = [Gift.name, Gift.telegram_id, Gift.ignore_as_sticker]
 
 
 class GiftFloorAdminView(ModelView, model=GiftFloor):
