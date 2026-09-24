@@ -22,7 +22,7 @@ async def update_sticker_pack_task() -> None:
     bot = create_bot()
 
     async with WorkerSessionMaker() as session:
-        pass
+        await update_sticker_pack(session=session, bot=bot, thermos_proxy=thermos_proxy)
 
 
 async def update_sticker_pack(
