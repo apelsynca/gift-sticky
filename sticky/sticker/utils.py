@@ -67,6 +67,7 @@ async def get_sticker_payload_for_gift_collection(
     stars_price = round(floor_price * 1.4 / 0.015)
 
     floor_change = await gift_floor_service.get_floor_change(session, gift=gift)
+    floor_change = round(floor_change, 2)
 
     log.debug("Got payload for sticker render", name=gift.name, floor_price=floor_price)
 

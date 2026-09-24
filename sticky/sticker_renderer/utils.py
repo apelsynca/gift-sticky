@@ -38,3 +38,14 @@ def make_linear_gradient(
             b = int(rgb_color1[2] + (rgb_color2[2] - rgb_color1[2]) * t)
             grad.putpixel((0, y), (r, g, b))
         return grad.resize((width, height))
+
+
+def round_string_for_render(value: float) -> str:
+    """
+    Format for render number showing format.
+    If >= 100 then return rounded integer,
+    Else format to 2 decimal places, then strip trailing zeros and trailing dots
+    """
+    if value >= 100:
+        return str(round(value))
+    return f"{value:.2f}".rstrip("0").rstrip(".")

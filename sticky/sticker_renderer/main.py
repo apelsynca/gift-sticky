@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 from sticky.kit.utils import utc_now
 from sticky.logging import Logger
 from sticky.sticker_renderer.types import FontPaths, GiftImageSettings, StickerPayload
-from sticky.sticker_renderer.utils import make_linear_gradient
+from sticky.sticker_renderer.utils import make_linear_gradient, round_string_for_render
 
 log: Logger = structlog.get_logger()
 
@@ -79,7 +79,7 @@ class StickerRenderer:
         return canvas_image
 
     def _get_price_text_overlay(self, payload: StickerPayload) -> Image.Image:
-        text = str(round(payload.price, 2))
+        text = round_string_for_render(payload.price)
         text_overlay = self._get_text_overlay()
 
         draw = ImageDraw.Draw(text_overlay)
@@ -206,7 +206,7 @@ class StickerRenderer:
         draw = ImageDraw.Draw(text_frame)
         font = ImageDraw.ImageFont.truetype(FontPaths.sans_semibold, size=24)
 
-        text = f"{payload.get_percent_sign()}{round(abs(payload.percent), 2)}%"
+        text = f"{payload.get_percent_sign()}{round(abs(payload.percent * 100))}%"
 
         text_width = _get_text_width_from_bbox(font.getbbox(text=text))
 
