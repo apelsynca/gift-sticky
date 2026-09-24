@@ -5,7 +5,6 @@ import structlog
 from advanced_alchemy.extensions.litestar import SQLAlchemyPlugin
 from litestar import Litestar
 from litestar.openapi.config import OpenAPIConfig
-from litestar_queues import QueueConfig, QueuePlugin
 
 from sticky.exception_handlers import EXCEPTION_HANDLERS
 from sticky.health.endpoints import router as health_router
@@ -14,6 +13,7 @@ from sticky.logging import Logger
 from sticky.logging import plugin as structlog_plugin
 from sticky.middlewares import LogTraceIdMiddleware, proxy_headers_middleware
 from sticky.postgres import db_config
+from sticky.queue import queue_plugin
 from sticky.sqladmin import sqladmin_plugin
 from sticky.sticker_pack.endpoints import router as sticker_pack_router
 
@@ -28,9 +28,6 @@ async def log_start_finish(_: Litestar) -> AsyncGenerator[None]:
 
 
 def create_app() -> Litestar:
-    queue_plugin = QueuePlugin(
-        config=QueueConfig(task_modules=("sticky.tasks",), initialize_schedules=True)
-    )
     sqlalchemy_plugin = SQLAlchemyPlugin(db_config)
 
     return Litestar(
