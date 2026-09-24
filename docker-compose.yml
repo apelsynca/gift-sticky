@@ -27,15 +27,15 @@ services:
     ports:
       - ${STICKY_POSTGRES_PORT}
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - sticky_db_data:/var/lib/postgresql/data
     networks:
       - dokploy-network
     env_file:
       - .env
 
 volumes:
-  db_data:
   generations:
+  sticky_db_data:
 
 networks:
   dokploy-network:
