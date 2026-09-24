@@ -1,5 +1,9 @@
+import io
+import os
 from typing import Literal
+from urllib.parse import urlparse
 
+import aiohttp
 from PIL import Image, ImageColor
 
 
@@ -49,3 +53,24 @@ def round_string_for_render(value: float) -> str:
     if value >= 100:
         return str(round(value))
     return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+def is_url(path: str) -> bool:
+    parsed = urlparse(path)
+
+    if parsed.scheme in ("http", "https", "ftp", "s3") and parsed.netloc:
+        return True
+
+    if os.path.isabs(path) or "/" in path or "\\" in path:
+        return False
+
+    raise ValueError(f"Unknown path string '{path}'")
+
+
+async def download_image_by_url(url: str) -> Image.Image:
+    async with aiohttp.ClientSession() as session:
+        response = await session.get(url=url)
+        response.raise_for_status()
+        image_bytes = await response.read()
+
+    return Image.open(io.BytesIO(image_bytes))

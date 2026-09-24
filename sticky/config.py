@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     STICKER_PACK_TITLE: str = "Sticky Gifts"
     STICKER_PACK_OWNER_ID: int = 0  # user id of the sticker pack owner
 
+    # Can be both path or URL
+    STICKER_NEUTRAL_TEMPLATE_PATH: str | None = None
+    STICKER_POSITIVE_TEMPLATE_PATH: str | None = None
+    STICKER_NEGATIVE_TEMPLATE_PATH: str | None = None
+
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str = "admin"
     ADMIN_AUTH_KEY: str = ""

@@ -1,15 +1,20 @@
 import io
 from typing import Literal
 
-import aiohttp
 import cairosvg
 import structlog
 from PIL import Image, ImageDraw
 
 from sticky.kit.utils import utc_now
 from sticky.logging import Logger
-from sticky.sticker_renderer.types import FontPaths, GiftImageSettings, StickerPayload
-from sticky.sticker_renderer.utils import make_linear_gradient, round_string_for_render
+from sticky.sticker_renderer.enums import FontPaths
+from sticky.sticker_renderer.template_loader import StickerTemplateLoader
+from sticky.sticker_renderer.types import GiftImageSettings, StickerPayload
+from sticky.sticker_renderer.utils import (
+    download_image_by_url,
+    make_linear_gradient,
+    round_string_for_render,
+)
 
 log: Logger = structlog.get_logger()
 
@@ -32,11 +37,15 @@ class StickerRenderer:
     ) -> None:
         self.gim_settings = GiftImageSettings(size=sticker_download_size)
 
+        self.template_loader = StickerTemplateLoader()
+
     async def render_and_save_to_file(self, payload: StickerPayload, path: str) -> None:
         """Method to generate a sticker from payload and save"""
         log.debug("Generating sticker for gift", id=payload.gift_id)
 
-        result_image = Image.open(payload.sticker_type.template_path)
+        result_image = await self.template_loader.get_template(
+            sticker_type=payload.sticker_type
+        )
 
         await self._put_gift_image_on_sticker(
             gift_id=payload.gift_id, canvas_image=result_image
@@ -63,14 +72,9 @@ class StickerRenderer:
     async def _put_gift_image_on_sticker(
         self, gift_id, canvas_image: Image.Image
     ) -> Image.Image:
-        async with aiohttp.ClientSession() as session:
-            response = await session.get(
-                url=f"https://api.changes.tg/original/{gift_id}.png?size={self.gim_settings.size}"
-            )
-            response.raise_for_status()
-            image_bytes = await response.read()
-
-        gift_image = Image.open(io.BytesIO(image_bytes))
+        gift_image = await download_image_by_url(
+            url=f"https://api.changes.tg/original/{gift_id}.png?size={self.gim_settings.size}"
+        )
         gift_image = gift_image.resize(size=(228, 228))
 
         canvas_image.paste(
