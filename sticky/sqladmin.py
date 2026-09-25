@@ -1,4 +1,5 @@
 import secrets
+from collections.abc import Sequence
 from typing import ClassVar
 
 import structlog
@@ -59,6 +60,8 @@ class GiftAdminView(ModelView, model=Gift):
     can_create = True
 
     column_list: ClassVar = [Gift.name, Gift.telegram_id, Gift.ignore_as_sticker]
+    column_default_sort: ClassVar = [(Gift.name, False)]
+    column_searchable_list: ClassVar = [Gift.name]
 
 
 class GiftFloorAdminView(ModelView, model=GiftFloor):
@@ -66,6 +69,10 @@ class GiftFloorAdminView(ModelView, model=GiftFloor):
     can_edit = False
 
     column_list: ClassVar = [GiftFloor.floor, GiftFloor.gift_id, GiftFloor.created_at]
+    column_default_sort: ClassVar = [(GiftFloor.floor, True)]
+
+    page_size = 50
+    page_size_options: ClassVar[Sequence[int]] = [50, 100, 150, 200]
 
 
 async_engine = create_async_engine("app")
