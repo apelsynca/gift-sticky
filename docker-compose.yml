@@ -5,16 +5,27 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - db
+      - redis
     restart: unless-stopped
     environment:
       - LITESTAR_APP=sticky.app:app
     command: sh -c "uv run task pre_deploy && uv run litestar run --host 0.0.0.0 --port 8000"
     volumes:
       - generations:/app/generations
-    networks:
-      - dokploy-network
     env_file:
       - .env
+    networks:
+      - dokploy-network
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - ${STICKY_REDIS_PORT}
+    volumes:
+      - redis_data:/data
+    networks:
+      - dokploy-network
 
   db:
     image: postgres:17
@@ -30,12 +41,11 @@ services:
       - sticky_db_data:/var/lib/postgresql/data
     networks:
       - dokploy-network
-    env_file:
-      - .env
 
 volumes:
   generations:
   sticky_db_data:
+  redis_data:
 
 networks:
   dokploy-network:

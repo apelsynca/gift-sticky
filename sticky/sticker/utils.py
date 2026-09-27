@@ -2,6 +2,7 @@ import os
 
 import structlog
 
+from sticky.converter import ton_converter
 from sticky.exceptions import ResourceNotFound, StickyError
 from sticky.gift.service import gift as gift_service
 from sticky.gift_floor.service import gift_floor as gift_floor_service
@@ -61,20 +62,20 @@ async def get_sticker_payload_for_gift_collection(
     """
 
     gift_floor = await gift_floor_service.get_latest(session, gift=gift)
+    ton_floor_price = gift_floor.floor
 
-    floor_price = gift_floor.floor
-    usd_price = floor_price * 1.4
-    stars_price = round(floor_price * 1.4 / 0.015)
+    async with ton_converter() as converter:
+        floor_change = await gift_floor_service.get_floor_change(session, gift=gift)
+        floor_change = round(floor_change, 2)
 
-    floor_change = await gift_floor_service.get_floor_change(session, gift=gift)
-    floor_change = round(floor_change, 2)
+        log.debug(
+            "Got payload for sticker render", name=gift.name, floor_price=ton_floor_price
+        )
 
-    log.debug("Got payload for sticker render", name=gift.name, floor_price=floor_price)
-
-    return StickerPayload(
-        gift_id=gift.telegram_id,
-        price=floor_price,
-        usd_price=usd_price,
-        stars_price=stars_price,
-        percent=floor_change,
-    )
+        return StickerPayload(
+            gift_id=gift.telegram_id,
+            price=ton_floor_price,
+            usd_price=converter.to_usd(ton=ton_floor_price),
+            stars_price=converter.to_stars(ton=ton_floor_price),
+            percent=floor_change,
+        )

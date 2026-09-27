@@ -44,11 +44,22 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = "admin"
     ADMIN_AUTH_KEY: str = ""
 
+    COINGECKO_DEMO_API_KEY: str = ""
+
     # Telegram bot
     BOT_TOKEN: str = ""
     BOT_WEBHOOK_URL: str = ""
     BOT_WEBHOOK_PATH: str = "/bot/webhook"
     BOT_WEBHOOK_SECRET_TOKEN: str | None = None
+
+    # Redis
+    REDIS_HOST: str = "127.0.0.1"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+
+    @property
+    def redis_url(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     # Database
     POSTGRES_USER: str = "sticky"
