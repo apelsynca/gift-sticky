@@ -42,7 +42,9 @@ class TonConverter:
 
     def __init__(self, rates: Rates | None = None) -> None:
         self.redis = create_redis("app")  # NOTE: app -> replace
-        self.coingecko = AsyncCoingecko(demo_api_key=settings.COINGECKO_DEMO_API_KEY)
+        self.coingecko = AsyncCoingecko(
+            demo_api_key=settings.COINGECKO_DEMO_API_KEY, environment="demo"
+        )
         self._rates: Rates | None = rates
 
     @property
