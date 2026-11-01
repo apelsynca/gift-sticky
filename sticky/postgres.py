@@ -45,14 +45,17 @@ async def WorkerSessionMaker() -> AsyncGenerator[AsyncSession]:
     async_engine = create_async_engine("worker")
     async_sessionmaker = create_async_sessionmaker(async_engine)
 
-    async with async_sessionmaker() as session:
-        try:
-            yield session
-        except:
-            await session.rollback()
-            raise
-        else:
-            await session.commit()
+    try:
+        async with async_sessionmaker() as session:
+            try:
+                yield session
+            except:
+                await session.rollback()
+                raise
+            else:
+                await session.commit()
+    finally:
+        await async_engine.dispose()
 
 
 __all__ = ["AsyncEngine", "AsyncSession", "WorkerSessionMaker", "create_async_engine"]

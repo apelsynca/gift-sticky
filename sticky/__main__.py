@@ -32,19 +32,26 @@ async def render_stickers_once() -> None:
     async_engine = create_async_engine("script")
     async_sessionmaker = create_async_sessionmaker(async_engine)
 
-    async with async_sessionmaker() as session:
-        await render_stickers(session)
+    try:
+        async with async_sessionmaker() as session:
+            await render_stickers(session)
+    finally:
+        await async_engine.dispose()
 
 
 async def sticky_generate_and_post_once() -> None:
-    bot = create_bot()
     thermos_proxy = ThermosProxy()
 
     async_engine = create_async_engine("app")
     async_sessionmaker = create_async_sessionmaker(async_engine)
 
-    async with async_sessionmaker() as session:
-        await update_sticker_pack(session=session, bot=bot, thermos_proxy=thermos_proxy)
+    try:
+        async with create_bot() as bot, async_sessionmaker() as session:
+            await update_sticker_pack(
+                session=session, bot=bot, thermos_proxy=thermos_proxy
+            )
+    finally:
+        await async_engine.dispose()
 
 
 async def run() -> None:

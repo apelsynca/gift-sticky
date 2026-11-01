@@ -11,18 +11,15 @@ dependencies = [
   "asyncpg>=0.31.0",
   "cairosvg>=2.9.1",
   "coingecko-sdk>=4.1.0",
-  "gchanges",
   "litestar-queues>=0.12.0",
   "litestar[sqlalchemy,standard]>=2.24.0",
   "pillow>=12.3.0",
-  "psycopg2-binary>=2.9.13",
   "pydantic>=2.13.5",
   "pydantic-settings>=2.15.0",
   "redis>=8.1.0",
   "sqladmin-litestar-plugin>=0.2.0",
   "sqladmin[auth]>=0.32.0",
   "sqlalchemy>=2.0.52",
-  "sqlalchemy-utils>=0.42.1",
   "structlog>=26.1.0",
   "taskipy>=1.14.1",
   "uvicorn>=0.53.0",
@@ -31,11 +28,13 @@ dependencies = [
 [dependency-groups]
 dev = [
   "freezegun>=1.5.5",
+  "psycopg2-binary>=2.9.13",
   "pytest>=9.1.1",
   "pytest-asyncio>=1.4.0",
   "pytest-mock>=3.15.1",
   "pytest-xdist[psutil]>=3.8.0",
   "ruff>=0.16.7",
+  "sqlalchemy-utils>=0.42.1",
 ]
 
 [tool.taskipy.tasks]

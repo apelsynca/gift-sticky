@@ -7,6 +7,7 @@ import structlog
 from coingecko_sdk import AsyncCoingecko
 
 from sticky.config import settings
+from sticky.exceptions import StickyError
 from sticky.logging import Logger
 from sticky.redis import create_redis
 
@@ -76,13 +77,21 @@ class TonConverter:
             price_response = await self.coingecko.simple.price.get(
                 vs_currencies="usd", ids="the-open-network"
             )
-            ton_usd = price_response["the-open-network"].usd or 0
+            ton_price = price_response.get("the-open-network")
+            ton_usd = ton_price.usd if ton_price is not None else None
 
-            await self.redis.set(name="ton_rate", value=ton_usd, ex=self.RATE_TTL)
+            if ton_usd is None or ton_usd <= 0:
+                raise StickyError("CoinGecko returned no usable TON/USD rate")
+
+            await self.redis.set(name=self.REDIS_KEY, value=ton_usd, ex=self.RATE_TTL)
         else:
             ton_usd = float(ton_usd)
 
         self.set_rates(rates=Rates(ton_usd=ton_usd))
+
+    async def close(self) -> None:
+        await self.redis.aclose()
+        await self.coingecko.close()
 
 
 @asynccontextmanager
@@ -95,8 +104,12 @@ async def ton_converter() -> AsyncGenerator[TonConverter]:
             usd = converter.to_usd(1.5)
     """
     converter = TonConverter()
-    await converter.refresh_rates()
 
-    log.debug("Created ton converter", rates=converter.rates)
+    try:
+        await converter.refresh_rates()
 
-    yield converter
+        log.debug("Created ton converter", rates=converter.rates)
+
+        yield converter
+    finally:
+        await converter.close()

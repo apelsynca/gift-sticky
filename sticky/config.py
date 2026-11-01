@@ -2,7 +2,7 @@ import os
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import PostgresDsn, field_validator
+from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,17 +40,16 @@ class Settings(BaseSettings):
     STICKER_POSITIVE_TEMPLATE_PATH: str | None = None
     STICKER_NEGATIVE_TEMPLATE_PATH: str | None = None
 
+    # Admin access stays disabled until the password (and, for the admin panel,
+    # the session signing key) are set
     ADMIN_USERNAME: str = "admin"
-    ADMIN_PASSWORD: str = "admin"
+    ADMIN_PASSWORD: str = ""
     ADMIN_AUTH_KEY: str = ""
 
     COINGECKO_DEMO_API_KEY: str = ""
 
     # Telegram bot
     BOT_TOKEN: str = ""
-    BOT_WEBHOOK_URL: str = ""
-    BOT_WEBHOOK_PATH: str = "/bot/webhook"
-    BOT_WEBHOOK_SECRET_TOKEN: str | None = None
 
     # Redis
     REDIS_HOST: str = "127.0.0.1"
@@ -94,13 +93,6 @@ class Settings(BaseSettings):
 
     def is_environment(self, environments: set[Environment]) -> bool:
         return self.ENV in environments
-
-    @field_validator("BOT_WEBHOOK_URL", mode="before")
-    @classmethod
-    def remove_trailing_slash(cls, v: str) -> str:
-        if isinstance(v, str):
-            return v.rstrip("/")
-        return v
 
 
 settings = Settings()

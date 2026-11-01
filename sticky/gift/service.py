@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, select
 
 from sticky.exceptions import ResourceNotFound, StickyError
 from sticky.gift.repository import GiftRepository
@@ -15,6 +15,7 @@ class GiftService:
         *,
         sort_by_floor_desc: bool = True,
         only_positive_floor: bool = True,
+        limit: int | None = None,
     ) -> Sequence[Gift]:
         """
         Gets all Gift objects where:
@@ -22,41 +23,31 @@ class GiftService:
         - latest GiftFloor related to Gift is > 0
 
         Also sorts by GiftFloor by default.
+        Ties are broken by id, so that repeated limited calls return the same gifts.
         """
         repository = GiftRepository.from_session(session)
 
         stmt = repository.get_base_stmt().where(Gift.ignore_as_sticker == False)
 
-        needs_floor_join = only_positive_floor or sort_by_floor_desc
-        if needs_floor_join:
-            ranked_floors_subq = select(
-                GiftFloor.gift_id.label("gift_id"),
-                GiftFloor.floor.label("floor"),
-                func.row_number()
-                .over(
-                    partition_by=GiftFloor.gift_id,
-                    order_by=GiftFloor.created_at.desc(),
-                )
-                .label("rn"),
-            ).subquery()
-            latest_floors_subq = (
-                select(
-                    ranked_floors_subq.c.gift_id,
-                    ranked_floors_subq.c.floor,
-                )
-                .where(ranked_floors_subq.c.rn == 1)
-                .subquery()
-            )
+        latest_floor = (
+            select(GiftFloor.floor)
+            .where(GiftFloor.gift_id == Gift.id)
+            .order_by(GiftFloor.created_at.desc())
+            .limit(1)
+            .correlate(Gift)
+            .scalar_subquery()
+        )
 
-            stmt = stmt.outerjoin(
-                latest_floors_subq, Gift.id == latest_floors_subq.c.gift_id
-            )
+        if only_positive_floor:
+            stmt = stmt.where(latest_floor > 0)
 
-            if only_positive_floor:
-                stmt = stmt.where(latest_floors_subq.c.floor > 0)
+        if sort_by_floor_desc:
+            stmt = stmt.order_by(desc(latest_floor).nulls_last())
 
-            if sort_by_floor_desc:
-                stmt = stmt.order_by(desc(latest_floors_subq.c.floor).nulls_last())
+        stmt = stmt.order_by(Gift.id)
+
+        if limit is not None:
+            stmt = stmt.limit(limit)
 
         return await repository.get_all(stmt=stmt)
 

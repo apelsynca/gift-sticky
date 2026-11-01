@@ -437,20 +437,6 @@ wheels = [
 ]
 
 [[package]]
-name = "gchanges"
-version = "0.1.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "aiohttp" },
-    { name = "certifi" },
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/89/ac1abdfb80161d93e5711502bfdc9d83bf764ce60d5c121e11f0543cf4c0/gchanges-0.1.1.tar.gz", hash = "sha256:4d020060c85805bd35a57eaffd50608a6d7a90ed0318de38f8b67296d3f3c2bc", size = 5565, upload-time = "2026-09-17T08:45:43.041Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/66/6d/c4c7b80c52ffdae1d742fee36b665fa52ef7335382904cac3aa19f34b94f/gchanges-0.1.1-py3-none-any.whl", hash = "sha256:950f66e6ed423df81c3a3744fe98f5dd63a41f23780252e498be8f5d0c63df87", size = 10192, upload-time = "2026-09-17T08:45:41.94Z" },
-]
-
-[[package]]
 name = "gift-sticky"
 version = "0.9.9"
 source = { virtual = "." }
@@ -461,18 +447,15 @@ dependencies = [
     { name = "asyncpg" },
     { name = "cairosvg" },
     { name = "coingecko-sdk" },
-    { name = "gchanges" },
     { name = "litestar", extra = ["sqlalchemy", "standard"] },
     { name = "litestar-queues" },
     { name = "pillow" },
-    { name = "psycopg2-binary" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "redis" },
     { name = "sqladmin", extra = ["auth"] },
     { name = "sqladmin-litestar-plugin" },
     { name = "sqlalchemy" },
-    { name = "sqlalchemy-utils" },
     { name = "structlog" },
     { name = "taskipy" },
     { name = "uvicorn" },
@@ -481,11 +464,13 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "freezegun" },
+    { name = "psycopg2-binary" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-mock" },
     { name = "pytest-xdist", extra = ["psutil"] },
     { name = "ruff" },
+    { name = "sqlalchemy-utils" },
 ]
 
 [package.metadata]
@@ -496,18 +481,15 @@ requires-dist = [
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "cairosvg", specifier = ">=2.9.1" },
     { name = "coingecko-sdk", specifier = ">=4.1.0" },
-    { name = "gchanges" },
     { name = "litestar", extras = ["sqlalchemy", "standard"], specifier = ">=2.24.0" },
     { name = "litestar-queues", specifier = ">=0.12.0" },
     { name = "pillow", specifier = ">=12.3.0" },
-    { name = "psycopg2-binary", specifier = ">=2.9.13" },
     { name = "pydantic", specifier = ">=2.13.5" },
     { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "redis", specifier = ">=8.1.0" },
     { name = "sqladmin", extras = ["auth"], specifier = ">=0.32.0" },
     { name = "sqladmin-litestar-plugin", specifier = ">=0.2.0" },
     { name = "sqlalchemy", specifier = ">=2.0.52" },
-    { name = "sqlalchemy-utils", specifier = ">=0.42.1" },
     { name = "structlog", specifier = ">=26.1.0" },
     { name = "taskipy", specifier = ">=1.14.1" },
     { name = "uvicorn", specifier = ">=0.53.0" },
@@ -516,11 +498,13 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "freezegun", specifier = ">=1.5.5" },
+    { name = "psycopg2-binary", specifier = ">=2.9.13" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-asyncio", specifier = ">=1.4.0" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "pytest-xdist", extras = ["psutil"], specifier = ">=3.8.0" },
     { name = "ruff", specifier = ">=0.16.7" },
+    { name = "sqlalchemy-utils", specifier = ">=0.42.1" },
 ]
 
 [[package]]

@@ -2,7 +2,12 @@ import asyncio
 
 import structlog
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest, TelegramNotFound
+from aiogram.exceptions import (
+    TelegramAPIError,
+    TelegramBadRequest,
+    TelegramNotFound,
+    TelegramRetryAfter,
+)
 from aiogram.types import Sticker as TelegramSticker
 
 from sticky.config import settings
@@ -13,6 +18,7 @@ from sticky.logging import Logger
 from sticky.models import Gift, Sticker
 from sticky.postgres import AsyncSession
 from sticky.sticker.service import sticker as sticker_service
+from sticky.sticker.utils import MAX_GIFT_STICKERS
 from sticky.sticker_pack.service import sticker_pack as sticker_pack_service
 from sticky.sticker_renderer import renderer as sticker_renderer
 
@@ -28,7 +34,8 @@ async def ensure_sticker_pack_is_created(session: AsyncSession, bot: Bot) -> Non
         if sticker_pack:
             try:
                 sticker_set = await bot.get_sticker_set(name=settings.STICKER_PACK_NAME)
-            except TelegramNotFound:
+            # Telegram reports a missing sticker set as 400 STICKERSET_INVALID
+            except TelegramBadRequest, TelegramNotFound:
                 await sticker_pack_service.create_in_telegram(bot)
     except ResourceNotFound:
         try:
@@ -57,7 +64,9 @@ async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> No
     via getting all sticker records and editing to the fresh ones
     """
 
-    gifts = await gift_service.get_all(session, only_positive_floor=True)
+    gifts = await gift_service.get_all(
+        session, only_positive_floor=True, limit=MAX_GIFT_STICKERS
+    )
     sticker_set = await bot.get_sticker_set(name=settings.STICKER_PACK_NAME)
 
     tg_stickerpack_size = len(sticker_set.stickers)
@@ -77,9 +86,25 @@ async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> No
             )
             continue
 
-        await update_sticker_in_sticker_pack_in_telegram(
-            session, bot=bot, gift=gift, pre_existing_tg_sticker=telegram_sticker
-        )
+        try:
+            await update_sticker_in_sticker_pack_in_telegram(
+                session, bot=bot, gift=gift, pre_existing_tg_sticker=telegram_sticker
+            )
+        except TelegramRetryAfter as exc:
+            # Every next request would fail too, the next scheduled run picks it up
+            log.warning(
+                "Stopped sticker pack update, Telegram rate limit was hit",
+                retry_after=exc.retry_after,
+            )
+            return
+        except (TelegramAPIError, FileNotFoundError) as exc:
+            # File is missing if this gift has never been rendered successfully
+            log.warning(
+                "Skipped publishing a gift, since it failed",
+                gift_id=gift.telegram_id,
+                exc_info=exc,
+            )
+
         await asyncio.sleep(TG_RATE_LIMIT_SLEEP)
 
     gifts_in_stickerpack_count = len(gifts) + 1
@@ -88,7 +113,18 @@ async def update_sticker_pack_in_telegram(session: AsyncSession, bot: Bot) -> No
 
     for i in range(gifts_in_stickerpack_count, tg_stickerpack_size):
         telegram_sticker = sticker_set.stickers[i]
-        await telegram_sticker.delete_from_set()
+
+        try:
+            await telegram_sticker.delete_from_set()
+        except TelegramRetryAfter as exc:
+            log.warning(
+                "Stopped sticker pack cleanup, Telegram rate limit was hit",
+                retry_after=exc.retry_after,
+            )
+            return
+        except TelegramAPIError as exc:
+            log.warning("Failed to delete a leftover sticker", exc_info=exc)
+
         await asyncio.sleep(TG_RATE_LIMIT_SLEEP)
 
 

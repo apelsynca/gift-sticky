@@ -8,8 +8,13 @@ ADD . /app
 
 WORKDIR /app
 
-RUN uv sync --locked
+RUN uv sync --locked --no-dev
+
+RUN useradd --uid 1000 --no-create-home sticky && chown sticky /app/generations
 
 ENV LITESTAR_APP="sticky.app:app"
+ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["uv", "run", "litestar", "run", "--host", "0.0.0.0", "--port", "8000"]
+USER sticky
+
+CMD ["litestar", "run", "--host", "0.0.0.0", "--port", "8000"]

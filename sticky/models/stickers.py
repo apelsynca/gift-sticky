@@ -19,4 +19,4 @@ class Sticker(RecordModel):
     gift: Mapped[Gift] = relationship("Gift", back_populates="sticker")
 
     file: Mapped[str]  # can be a URL to file or file_id -? unsure check
-    emojis: Mapped[str] = mapped_column(String)  # string with all emoji defs
+    emojis: Mapped[str] = mapped_column(String)  # whitespace-separated emojis

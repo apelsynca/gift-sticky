@@ -1,11 +1,11 @@
 import io
+from datetime import UTC, datetime
 from typing import Literal
 
 import cairosvg
 import structlog
 from PIL import Image, ImageDraw
 
-from sticky.kit.utils import utc_now
 from sticky.logging import Logger
 from sticky.sticker_renderer.enums import FontPaths
 from sticky.sticker_renderer.template_loader import StickerTemplateLoader
@@ -60,7 +60,8 @@ class StickerRenderer:
         )
 
         result_image = Image.alpha_composite(
-            result_image, self._get_bottom_text_overlay()
+            result_image,
+            self._get_bottom_text_overlay(price_updated_at=payload.price_updated_at),
         )
 
         result_image = Image.alpha_composite(
@@ -184,13 +185,15 @@ class StickerRenderer:
 
         return text_overlay
 
-    def _get_bottom_text_overlay(self) -> Image.Image:
+    def _get_bottom_text_overlay(self, price_updated_at: datetime) -> Image.Image:
         text_overlay = self._get_text_overlay()
 
         draw = ImageDraw.Draw(text_overlay)
         font = ImageDraw.ImageFont.truetype(FontPaths.sans_semibold, size=24)
 
-        bottom_timestamp = utc_now().strftime("%d.%m.%Y %H:%M (UTC)")
+        bottom_timestamp = price_updated_at.astimezone(UTC).strftime(
+            "%d.%m.%Y %H:%M (UTC)"
+        )
 
         text_width = _get_text_width_from_bbox(font.getbbox(text=bottom_timestamp))
         left_pos = 256 - text_width / 2

@@ -9,7 +9,8 @@ services:
     restart: unless-stopped
     environment:
       - LITESTAR_APP=sticky.app:app
-    command: sh -c "uv run task pre_deploy && uv run litestar run --host 0.0.0.0 --port 8000"
+      - STICKY_REDIS_HOST=${STICKY_REDIS_HOST:-sticky-redis}
+    command: sh -c "task pre_deploy && litestar run --host 0.0.0.0 --port 8000"
     volumes:
       - generations:/app/generations
     env_file:
@@ -20,12 +21,16 @@ services:
   redis:
     image: redis:alpine
     restart: unless-stopped
-    ports:
-      - ${STICKY_REDIS_PORT}
+    command: redis-server --port ${STICKY_REDIS_PORT:-6379}
+    expose:
+      - ${STICKY_REDIS_PORT:-6379}
     volumes:
       - redis_data:/data
     networks:
-      - dokploy-network
+      dokploy-network:
+        # dokploy-network is shared between stacks, plain `redis` could resolve elsewhere
+        aliases:
+          - sticky-redis
 
   db:
     image: postgres:17
@@ -35,7 +40,7 @@ services:
       - POSTGRES_USER=${STICKY_POSTGRES_USER}
       - POSTGRES_PASSWORD=${STICKY_POSTGRES_PWD}
       - PGPORT=${STICKY_POSTGRES_PORT}
-    ports:
+    expose:
       - ${STICKY_POSTGRES_PORT}
     volumes:
       - sticky_db_data:/var/lib/postgresql/data

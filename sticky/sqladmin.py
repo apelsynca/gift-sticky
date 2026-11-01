@@ -1,4 +1,5 @@
-import secrets
+import hashlib
+import hmac
 from collections.abc import Sequence
 from typing import ClassVar
 
@@ -8,6 +9,7 @@ from sqladmin.authentication import AuthenticationBackend
 from sqladmin_litestar_plugin import SQLAdminPlugin
 from starlette.requests import Request
 
+from sticky.admin_auth import verify_admin_credentials
 from sticky.config import settings
 from sticky.logging import Logger
 from sticky.models import Gift, GiftFloor, Sticker
@@ -16,12 +18,36 @@ from sticky.postgres import create_async_engine
 log: Logger = structlog.get_logger()
 
 
+def _get_session_token() -> str:
+    """
+    Session cookies are only signed, so the credentials can't be stored in them.
+    Derived from the credentials, so changing them invalidates existing sessions.
+    """
+    credentials = f"{settings.ADMIN_USERNAME}\0{settings.ADMIN_PASSWORD}".encode()
+    return hmac.new(
+        settings.ADMIN_AUTH_KEY.encode(), credentials, hashlib.sha256
+    ).hexdigest()
+
+
 class AdminAuth(AuthenticationBackend):
     async def login(self, request: Request) -> bool:
-        form = await request.form()
-        username, password = form["username"], form["password"]
+        # Session cookies are forgeable without the signing key
+        if not settings.ADMIN_AUTH_KEY:
+            log.warning("Admin login is disabled, since ADMIN_AUTH_KEY is not set")
+            return False
 
-        request.session.update({"token": f"{username}:{password}"})
+        form = await request.form()
+        username, password = form.get("username"), form.get("password")
+
+        if (
+            not isinstance(username, str)
+            or not isinstance(password, str)
+            or not verify_admin_credentials(username, password)
+        ):
+            log.warning("Login attempt with wrong credentials")
+            return False
+
+        request.session.update({"token": _get_session_token()})
 
         return True
 
@@ -30,24 +56,14 @@ class AdminAuth(AuthenticationBackend):
         return True
 
     async def authenticate(self, request: Request) -> bool:
+        if not settings.ADMIN_AUTH_KEY or not settings.ADMIN_PASSWORD:
+            return False
+
         token = request.session.get("token")
-        if not token:
+        if not isinstance(token, str):
             return False
 
-        username, password = token.split(":")
-
-        right_username = username == settings.ADMIN_USERNAME
-        right_password = secrets.compare_digest(password, settings.ADMIN_PASSWORD)
-
-        if not right_username or not right_password:
-            log.warning(
-                "Login attempt with wrong credentials",
-                right_username=right_username,
-                right_password=right_password,
-            )
-            return False
-
-        return True
+        return hmac.compare_digest(token.encode(), _get_session_token().encode())
 
 
 class StickerAdminView(ModelView, model=Sticker):

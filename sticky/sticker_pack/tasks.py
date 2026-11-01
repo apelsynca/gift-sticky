@@ -15,13 +15,19 @@ from sticky.thermos_proxy.client import ThermosProxy
 
 log: Logger = structlog.get_logger()
 
+UPDATE_TIMEOUT_SECONDS = 30 * 60  # well under the hourly schedule
 
-@task("sticker_pack.update", cron="@hourly", timezone="UTC")
+
+@task(
+    "sticker_pack.update",
+    cron="@hourly",
+    timezone="UTC",
+    timeout=UPDATE_TIMEOUT_SECONDS,
+)
 async def update_sticker_pack_task() -> None:
     thermos_proxy = ThermosProxy()
-    bot = create_bot()
 
-    async with WorkerSessionMaker() as session:
+    async with create_bot() as bot, WorkerSessionMaker() as session:
         await update_sticker_pack(session=session, bot=bot, thermos_proxy=thermos_proxy)
 
 
@@ -38,4 +44,4 @@ async def update_sticker_pack(
     await render_stickers(session)
 
     await update_sticker_pack_in_telegram(session, bot)
-    # last is auto-committed
+    await session.commit()

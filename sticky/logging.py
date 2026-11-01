@@ -127,7 +127,7 @@ class Development(Logging[structlog.dev.ConsoleRenderer]):
 class Production(Logging[structlog.dev.ConsoleRenderer]):
     @classmethod
     def get_renderer(cls) -> structlog.dev.ConsoleRenderer:
-        return structlog.dev.ConsoleRenderer(colors=True)
+        return structlog.dev.ConsoleRenderer(colors=False)
 
 
 def get_renderer_class() -> type[Logging]:
