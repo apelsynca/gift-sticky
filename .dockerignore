@@ -7,4 +7,5 @@
 .ruff_cache
 **/__pycache__
 generations/*.png
+generations/*.tmp
 tests

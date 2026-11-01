@@ -6,6 +6,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from sticky.converter import Rates, TonConverter
+from sticky.exceptions import StickyError
 from sticky.models import GiftFloor
 from sticky.postgres import AsyncSession
 from sticky.sticker.utils import render_stickers
@@ -49,3 +50,20 @@ async def test_render_shares_converter_and_survives_a_failed_gift(
     assert render.await_count == 3
     # The sticker shows when the price was recorded, not when it got rendered
     assert render.await_args.kwargs["payload"].price_updated_at == price_time
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("converter_factory")
+async def test_render_raises_if_every_gift_failed(
+    session: AsyncSession, save_fixture: SaveFixture, mocker: MockerFixture
+) -> None:
+    gift = await create_gift(save_fixture)
+    await save_fixture(GiftFloor(gift=gift, floor=1))
+    mocker.patch(
+        "sticky.sticker.utils.sticker_renderer.render_and_save_to_file",
+        new_callable=AsyncMock,
+        side_effect=PermissionError("generations is not writable"),
+    )
+
+    with pytest.raises(StickyError):
+        await render_stickers(session)

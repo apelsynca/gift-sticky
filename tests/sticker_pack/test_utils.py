@@ -2,10 +2,15 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
+from aiogram.exceptions import (
+    TelegramBadRequest,
+    TelegramNetworkError,
+    TelegramRetryAfter,
+)
 from aiogram.methods import GetStickerSet
 from pytest_mock import MockerFixture
 
+from sticky.exceptions import StickyError
 from sticky.models import Gift, GiftFloor, StickerPack
 from sticky.postgres import AsyncSession
 from sticky.sticker_pack.utils import (
@@ -75,6 +80,32 @@ async def test_update_continues_after_a_failed_gift(
 
 
 @pytest.mark.asyncio
+async def test_update_raises_if_every_gift_failed(
+    session: AsyncSession, save_fixture: SaveFixture
+) -> None:
+    await create_gifts(save_fixture, 2)
+    bot = make_bot(stickers_in_pack=1)
+    bot.add_sticker_to_set.side_effect = TelegramBadRequest(METHOD, "wrong owner")
+
+    with pytest.raises(StickyError):
+        await update_sticker_pack_in_telegram(session, bot)
+
+
+@pytest.mark.asyncio
+async def test_update_does_not_swallow_network_errors(
+    session: AsyncSession, save_fixture: SaveFixture
+) -> None:
+    await create_gifts(save_fixture, 2)
+    bot = make_bot(stickers_in_pack=1)
+    bot.add_sticker_to_set.side_effect = TelegramNetworkError(METHOD, "no network")
+
+    with pytest.raises(TelegramNetworkError):
+        await update_sticker_pack_in_telegram(session, bot)
+
+    assert bot.add_sticker_to_set.await_count == 1
+
+
+@pytest.mark.asyncio
 async def test_update_stops_on_rate_limit(
     session: AsyncSession, save_fixture: SaveFixture
 ) -> None:
@@ -119,3 +150,22 @@ async def test_ensure_recreates_pack_missing_from_telegram(
     await ensure_sticker_pack_is_created(session, bot)
 
     create_in_telegram.assert_awaited_once_with(bot)
+
+
+@pytest.mark.asyncio
+async def test_ensure_does_not_recreate_pack_on_other_bad_requests(
+    session: AsyncSession, mocker: MockerFixture
+) -> None:
+    session.add(StickerPack(name="pack_by_bot"))
+    await session.flush()
+    bot = make_bot(stickers_in_pack=0)
+    bot.get_sticker_set.side_effect = TelegramBadRequest(METHOD, "something else")
+    create_in_telegram = mocker.patch(
+        "sticky.sticker_pack.utils.sticker_pack_service.create_in_telegram",
+        new_callable=AsyncMock,
+    )
+
+    with pytest.raises(TelegramBadRequest):
+        await ensure_sticker_pack_is_created(session, bot)
+
+    create_in_telegram.assert_not_awaited()

@@ -29,7 +29,7 @@ class StickerService:
         return InputSticker(
             sticker=FSInputFile(sticker.file),
             format="static",
-            emoji_list=sticker.emojis.split() or ["🍊"],
+            emoji_list=list(sticker.emojis) if sticker.emojis else ["🍊"],
         )
 
 

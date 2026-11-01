@@ -1,4 +1,5 @@
 import io
+import os
 from datetime import UTC, datetime
 from typing import Literal
 
@@ -68,7 +69,10 @@ class StickerRenderer:
             result_image, self._get_percent_text_overlay(payload=payload)
         )
 
-        result_image.save(path)
+        # A failed write must not leave a truncated file that gets published afterwards
+        temporary_path = f"{path}.tmp"
+        result_image.save(temporary_path, format="PNG")
+        os.replace(temporary_path, path)
 
     async def _put_gift_image_on_sticker(
         self, gift_id, canvas_image: Image.Image

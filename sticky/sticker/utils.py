@@ -24,6 +24,8 @@ async def render_stickers(session: AsyncSession, *, skip_existing: bool = False)
     gets a payload for that and renders them
     """
     gifts = await gift_service.get_all(session, limit=MAX_GIFT_STICKERS)
+    rendered_count = 0
+    failed_count = 0
 
     async with ton_converter() as converter:
         for gift in gifts:
@@ -61,11 +63,19 @@ async def render_stickers(session: AsyncSession, *, skip_existing: bool = False)
                     path=sticker_renderer.get_render_path(gift.telegram_id),
                 )
             except Exception as exc:
+                failed_count += 1
                 log.warning(
                     "Skipping gift, since rendering it failed",
                     gift_id=gift.telegram_id,
                     exc_info=exc,
                 )
+            else:
+                rendered_count += 1
+
+    # Every gift failing means something is wrong globally (e.g. unwritable directory),
+    # publishing would silently re-upload the old files
+    if failed_count and not rendered_count:
+        raise StickyError("Rendering failed for every gift")
 
 
 async def get_sticker_payload_for_gift_collection(

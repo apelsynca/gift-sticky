@@ -42,7 +42,7 @@ class TonConverter:
     REDIS_KEY = "STICKY_TON_RATE"
 
     def __init__(self, rates: Rates | None = None) -> None:
-        self.redis = create_redis("app")  # NOTE: app -> replace
+        self.redis = create_redis("app")
         self.coingecko = AsyncCoingecko(
             demo_api_key=settings.COINGECKO_DEMO_API_KEY, environment="demo"
         )

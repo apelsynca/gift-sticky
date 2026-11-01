@@ -15,7 +15,7 @@ else:
     Redis = _async_redis.Redis
 
 
-REDIS_RETRY_ON_ERRROR: list[type[RedisError]] = [ConnectionError, TimeoutError]
+REDIS_RETRY_ON_ERROR: list[type[RedisError]] = [ConnectionError, TimeoutError]
 REDIS_RETRY = Retry(default_backoff(), retries=50)
 
 type ProcessName = Literal["app"]
@@ -25,10 +25,10 @@ def create_redis(process_name: ProcessName) -> Redis:
     return _async_redis.Redis.from_url(
         settings.redis_url,
         decode_responses=True,
-        retry_on_error=REDIS_RETRY_ON_ERRROR,
+        retry_on_error=REDIS_RETRY_ON_ERROR,
         retry=REDIS_RETRY,
         client_name=f"{settings.ENV.value}.{process_name}",
     )
 
 
-__all__ = ["REDIS_RETRY", "REDIS_RETRY_ON_ERRROR", "Redis", "create_redis"]
+__all__ = ["REDIS_RETRY", "REDIS_RETRY_ON_ERROR", "Redis", "create_redis"]
