@@ -103,5 +103,4 @@ async def get_sticker_payload_for_gift_collection(
         usd_price=converter.to_usd(ton=ton_floor_price),
         stars_price=converter.to_stars(ton=ton_floor_price),
         percent=floor_change,
-        price_updated_at=gift_floor.created_at,
     )

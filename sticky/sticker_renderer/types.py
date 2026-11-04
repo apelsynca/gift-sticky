@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import NamedTuple
 
 from pydantic import BaseModel
@@ -25,7 +24,6 @@ class StickerPayload(BaseModel):
     *price - Current price in GRAM
     *usd_price - Current price in USD
     *stars_price - Current price in stars
-    *price_updated_at - When the price was last recorded
     sticker_type -> type of the sticker based on percent
     """
 
@@ -34,7 +32,6 @@ class StickerPayload(BaseModel):
     price: float
     usd_price: float
     stars_price: int
-    price_updated_at: datetime
 
     @property
     def sticker_type(self) -> StickerTypes:

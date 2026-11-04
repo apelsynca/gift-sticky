@@ -48,8 +48,6 @@ async def test_render_shares_converter_and_survives_a_failed_gift(
 
     converter_factory.assert_called_once()
     assert render.await_count == 3
-    # The sticker shows when the price was recorded, not when it got rendered
-    assert render.await_args.kwargs["payload"].price_updated_at == price_time
 
 
 @pytest.mark.asyncio
