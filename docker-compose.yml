@@ -4,8 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
+      generations-permissions:
+        condition: service_completed_successfully
     restart: unless-stopped
     environment:
       - LITESTAR_APP=sticky.app:app
@@ -17,6 +21,15 @@ services:
       - .env
     networks:
       - dokploy-network
+
+  # The app runs as uid 1000, but an existing volume keeps its old root ownership
+  generations-permissions:
+    image: alpine:3.20
+    user: root
+    command: chown -R 1000:1000 /generations
+    volumes:
+      - generations:/generations
+    restart: "no"
 
   redis:
     image: redis:alpine
